@@ -141,19 +141,25 @@ async def handle_client(websocket):
                     if target == "sender":
                         target_ws = ROOMS[room_id]["sender"]
                         if target_ws:
-                            await target_ws.send(json.dumps({
-                                "type": "signal",
-                                "from": sender_id,
-                                "data": signal_data
-                            }))
+                            try:
+                                await target_ws.send(json.dumps({
+                                    "type": "signal",
+                                    "from": sender_id,
+                                    "data": signal_data
+                                }))
+                            except Exception:
+                                pass
                     else:
                         target_ws = ROOMS[room_id]["viewers"].get(target)
                         if target_ws:
-                            await target_ws.send(json.dumps({
-                                "type": "signal",
-                                "from": "sender",
-                                "data": signal_data
-                            }))
+                            try:
+                                await target_ws.send(json.dumps({
+                                    "type": "signal",
+                                    "from": "sender",
+                                    "data": signal_data
+                                }))
+                            except Exception:
+                                pass
 
             # 2.1. Резервный видеоканал через сокет
             elif msg_type == "frame":

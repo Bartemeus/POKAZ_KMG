@@ -284,8 +284,6 @@
     pc.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
         webrtcActive = true;
-        const fallbackImg = document.getElementById('stream-fallback');
-        if (fallbackImg) fallbackImg.style.display = 'none';
         video.style.display = 'block';
 
         if (video.srcObject !== event.streams[0]) {
@@ -310,12 +308,21 @@
     };
 
     pc.onconnectionstatechange = () => {
+      console.log('WebRTC State:', pc.connectionState);
       if (pc.connectionState === 'connected') {
         webrtcActive = true;
         updateStatus('online', 'Трансляция активна');
-      } else if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+      } else if (pc.connectionState === 'failed') {
         webrtcActive = false;
         updateStatus('connecting', 'Связь потеряна, ожидание...');
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log('ICE State:', pc.iceConnectionState);
+      if (['connected', 'completed'].includes(pc.iceConnectionState)) {
+        webrtcActive = true;
+        updateStatus('online', 'Трансляция активна');
       }
     };
   }
