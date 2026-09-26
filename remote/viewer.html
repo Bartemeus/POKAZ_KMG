@@ -242,20 +242,23 @@
       if (!signalData) return;
 
       if (signalData.sdp) {
-        // Получен SDP Offer от стримера
         setupPeerConnection();
-        await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
+        if (signalData.sdp.type === 'offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
 
-        ws.send(JSON.stringify({
-          type: 'signal',
-          target: 'sender',
-          room: roomId,
-          data: { sdp: answer }
-        }));
+          ws.send(JSON.stringify({
+            type: 'signal',
+            target: 'sender',
+            room: roomId,
+            data: { sdp: answer }
+          }));
+        } else if (signalData.sdp.type === 'answer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
+        }
       } else if (signalData.candidate) {
-        if (pc) {
+        if (pc && pc.remoteDescription) {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(signalData.candidate));
           } catch(e) {
@@ -264,8 +267,9 @@
         }
       }
     } else if (msg.type === 'frame') {
+      if (webrtcActive) return; // WebRTC приоритетен
       const fallbackImg = document.getElementById('stream-fallback');
-      if (fallbackImg && (!video.srcObject || video.paused)) {
+      if (fallbackImg) {
         fallbackImg.src = msg.data;
         fallbackImg.style.display = 'block';
         video.style.display = 'none';
@@ -274,7 +278,12 @@
     }
   }
 
+  let webrtcActive = false;
+
   function setupPeerConnection() {
+    if (pc && pc.signalingState !== 'closed') {
+      return pc;
+    }
     closePeer();
 
     pc = new RTCPeerConnection({
@@ -286,11 +295,17 @@
 
     pc.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
+        webrtcActive = true;
         const fallbackImg = document.getElementById('stream-fallback');
         if (fallbackImg) fallbackImg.style.display = 'none';
         video.style.display = 'block';
-        video.srcObject = event.streams[0];
-        video.play().catch(e => console.log('Autoplay error:', e));
+
+        if (video.srcObject !== event.streams[0]) {
+          video.srcObject = event.streams[0];
+          video.play().catch(e => {
+            if (e.name !== 'AbortError') console.warn('Play error:', e);
+          });
+        }
         updateStatus('online', 'Трансляция активна');
       }
     };
@@ -308,14 +323,17 @@
 
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'connected') {
+        webrtcActive = true;
         updateStatus('online', 'Трансляция активна');
       } else if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+        webrtcActive = false;
         updateStatus('connecting', 'Связь потеряна, ожидание...');
       }
     };
   }
 
   function closePeer() {
+    webrtcActive = false;
     if (pc) {
       try { pc.close(); } catch(e) {}
       pc = null;
