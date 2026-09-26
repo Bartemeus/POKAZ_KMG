@@ -129,7 +129,6 @@
   </div>
 
   <video id="stream-video" autoplay playsinline muted></video>
-  <img id="stream-fallback" alt="Live stream" style="width: 100%; height: 100%; object-fit: contain; display: none; pointer-events: none;">
 </div>
 
 <script>
@@ -266,19 +265,8 @@
           }
         }
       }
-    } else if (msg.type === 'frame') {
-      if (webrtcActive) return; // WebRTC приоритетен
-      const fallbackImg = document.getElementById('stream-fallback');
-      if (fallbackImg) {
-        fallbackImg.src = msg.data;
-        fallbackImg.style.display = 'block';
-        video.style.display = 'none';
-        updateStatus('online', 'Трансляция активна');
-      }
     }
   }
-
-  let webrtcActive = false;
 
   function setupPeerConnection() {
     if (pc && pc.signalingState !== 'closed') {
@@ -339,18 +327,15 @@
       pc = null;
     }
     video.srcObject = null;
-    const fallbackImg = document.getElementById('stream-fallback');
-    if (fallbackImg) fallbackImg.style.display = 'none';
   }
 
   // Расчет нормализованных координат клика (0.0 - 1.0) с учетом object-fit: contain
   function getNormalizedCoordinates(e) {
-    const fallbackImg = document.getElementById('stream-fallback');
-    const isVideo = video.style.display !== 'none' && video.videoWidth > 0;
-    const targetEl = isVideo ? video : fallbackImg;
-    const rect = targetEl ? targetEl.getBoundingClientRect() : container.getBoundingClientRect();
-    const vWidth = isVideo ? video.videoWidth : (fallbackImg.naturalWidth || 1920);
-    const vHeight = isVideo ? video.videoHeight : (fallbackImg.naturalHeight || 1080);
+    if (!video.videoWidth || !video.videoHeight) return null;
+
+    const rect = video.getBoundingClientRect();
+    const vWidth = video.videoWidth;
+    const vHeight = video.videoHeight;
 
     if (!vWidth || !vHeight) return null;
 
