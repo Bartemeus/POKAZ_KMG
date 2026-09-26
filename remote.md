@@ -1,7 +1,10 @@
 ### Созданные и измененные файлы
 
+* [setup_host.cmd](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/setup_host.cmd) — автоматическая проверка и установка Python, pip-пакетов (`websockets`, `pyautogui`, `pygetwindow`, `pillow`) и правил брандмауэра.
+* [start_host.cmd](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/start_host.cmd) — запуск стримера «в один клик»: поднимает веб-сервер `:8000`, открывает Chrome с `sender.html` и запускает `host_agent.py`.
+* [setup_prerequisites.ps1](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/setup_prerequisites.ps1) — PowerShell-эквивалент для автоматической настройки через WinRM/терминал.
 * [host_agent.py](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/host_agent.py) — локальный WebSocket-сервер (`ws://localhost:8765`), транслирующий координаты кликов в реальные действия мыши через `pyautogui`.
-* [run_agent.cmd](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/run_agent.cmd) — скрипт быстрого запуска Python-агента в один клик.
+* [run_agent.cmd](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/run_agent.cmd) — скрипт запуска агента с автопроверкой библиотек.
 * [sender.html](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/sender.html) — страница хоста: захват окна приложения через `getDisplayMedia`, WebRTC-вещание через PeerJS и пересылка кликов в `host_agent.py`.
 * [viewer.html](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/remote/viewer.html) — легковесный клиент для `<iframe>`: прием WebRTC-видеопотока, расчет относительных координат (`0.0`–`1.0`) с учетом `object-fit: contain` и отправка кликов хосту.
 * [первый_слайд_v3.html](file:///c:/Users/ADMIN/Documents/src/POKAZ_KMG/цд/первый_слайд_v3.html) — добавлен переключатель **«🔴 Live Управление» / «📹 Видеозапись»** и встроенный `<iframe id="pc-stream">` вместо стандартного видео.
