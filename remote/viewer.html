@@ -353,6 +353,14 @@
         console.warn('WebRTC ICE сбой (UDP заблокирован в сети), активен прямой TCP-видеоканал');
       }
     };
+
+    // Тайм-аут WebRTC: если за 4 секунды UDP не пробился, переключаемся исключительно на TCP
+    setTimeout(() => {
+      if (!webrtcActive && pc && pc.connectionState !== 'connected') {
+        closePeer();
+        console.log('[Viewer] WebRTC отключен по таймауту, активен чистый TCP-видеопоток');
+      }
+    }, 4000);
   }
 
   function closePeer() {

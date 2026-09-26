@@ -46,46 +46,18 @@ def get_screen_resolution():
 def perform_hardware_click(x, y, button="left", clicks=1):
     try:
         pyautogui.FAILSAFE = False
-        user32 = ctypes.windll.user32
-        screen_w, screen_h = get_screen_resolution()
+        target_x = int(round(x))
+        target_y = int(round(y))
         
-        target_x = int(x)
-        target_y = int(y)
-        user32.SetCursorPos(target_x, target_y)
+        # 1. Аппаратное перемещение курсора
+        ctypes.windll.user32.SetCursorPos(target_x, target_y)
+        time.sleep(0.01)
 
-        norm_x = int(target_x * 65535 / (screen_w - 1)) if screen_w > 1 else 0
-        norm_y = int(target_y * 65535 / (screen_h - 1)) if screen_h > 1 else 0
-
-        MOUSEEVENTF_MOVE = 0x0001
-        MOUSEEVENTF_LEFTDOWN = 0x0002
-        MOUSEEVENTF_LEFTUP = 0x0004
-        MOUSEEVENTF_RIGHTDOWN = 0x0008
-        MOUSEEVENTF_RIGHTUP = 0x0010
-        MOUSEEVENTF_MIDDLEDOWN = 0x0020
-        MOUSEEVENTF_MIDDLEUP = 0x0040
-        MOUSEEVENTF_ABSOLUTE = 0x8000
-
-        down_flag = MOUSEEVENTF_LEFTDOWN if button == "left" else (MOUSEEVENTF_RIGHTDOWN if button == "right" else MOUSEEVENTF_MIDDLEDOWN)
-        up_flag = MOUSEEVENTF_LEFTUP if button == "left" else (MOUSEEVENTF_RIGHTUP if button == "right" else MOUSEEVENTF_MIDDLEUP)
-
-        # Move mouse event with absolute coords so window receives WM_MOUSEMOVE and hit-test
-        user32.mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, norm_x, norm_y, 0, 0)
-        time.sleep(0.02)
-
-        for i in range(clicks):
-            user32.mouse_event(down_flag | MOUSEEVENTF_ABSOLUTE, norm_x, norm_y, 0, 0)
-            time.sleep(0.04)
-            user32.mouse_event(up_flag | MOUSEEVENTF_ABSOLUTE, norm_x, norm_y, 0, 0)
-            if clicks > 1 and i < clicks - 1:
-                time.sleep(0.06)
+        # 2. Вызов клика через SendInput (поддерживается всеми приложениями Windows)
+        pyautogui.click(x=target_x, y=target_y, button=button, clicks=clicks)
 
     except Exception as exc:
-        print(f"[HostAgent] Ctypes click error, fallback to pyautogui: {exc}")
-        try:
-            pyautogui.FAILSAFE = False
-            pyautogui.click(x=int(x), y=int(y), button=button, clicks=clicks)
-        except Exception as e2:
-            print(f"[HostAgent] PyAutoGUI click error: {e2}")
+        print(f"[HostAgent] Ошибка при клике: {exc}")
 
 async def handle_client(websocket):
     client_addr = websocket.remote_address
@@ -228,7 +200,7 @@ async def handle_client(websocket):
                     real_y = int(norm_y * screen_h)
                     mode_info = f"Экран ({screen_w}x{screen_h})"
 
-                print(f"[HostAgent] Клик [{button} x{clicks}]: ({norm_x:.4f}, {norm_y:.4f}) -> Реальные координаты ({real_x}, {real_y}) [{mode_info}]")
+                print(f"[HostAgent] Клик [{button} x{clicks}]: ({norm_x:.4f}, {norm_y:.4f}) -> Реальные координаты ({real_x}, {real_y}) [{mode_info}]", flush=True)
                 try:
                     perform_hardware_click(real_x, real_y, button=button, clicks=clicks)
                 except Exception as err:
