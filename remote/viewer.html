@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KMG Remote Viewer</title>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    #container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      cursor: crosshair;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: auto;
+    }
+    /* Индикатор клика (эффект ряби) */
+    .click-ripple {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #00d2ff;
+      background: rgba(0, 210, 255, 0.35);
+      transform: translate(-50%, -50%) scale(0.2);
+      pointer-events: none;
+      animation: ripple 0.35s ease-out forwards;
+      z-index: 100;
+    }
+    @keyframes ripple {
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+    }
+    /* Компактный бейдж статуса */
+    #badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(11, 17, 24, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #cbd5e1;
+      z-index: 50;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    .dot.online { background: #10b981; box-shadow: 0 0 6px #10b981; }
+    .dot.connecting { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+    #placeholder {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: #64748b;
+      font-size: 14px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #placeholder .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #00d2ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <video id="remote-video" autoplay playsinline muted></video>
+  
+  <div id="placeholder">
+    <div class="spinner"></div>
+    <span id="placeholder-text">Подключение к трансляции хоста...</span>
+  </div>
+
+  <div id="badge">
+    <span class="dot" id="status-dot"></span>
+    <span id="status-text">Ожидание хоста...</span>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const roomId = params.get('room') || 'kmg-stream-demo';
+  const hideBadge = params.get('badge') === '0';
+  const hostPeerId = `${roomId}-host`;
+
+  const video = document.getElementById('remote-video');
+  const container = document.getElementById('container');
+  const badge = document.getElementById('badge');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const placeholder = document.getElementById('placeholder');
+  const placeholderText = document.getElementById('placeholder-text');
+
+  if (hideBadge) badge.style.display = 'none';
+
+  let peer = null;
+  let dataConnection = null;
+  let reconnectTimer = null;
+
+  function updateStatus(state, text) {
+    statusDot.className = 'dot ' + state;
+    statusText.textContent = text;
+    if (state === 'online') {
+      placeholder.style.display = 'none';
+    } else {
+      placeholder.style.display = 'flex';
+      placeholderText.textContent = text;
+    }
+  }
+
+  function initViewer() {
+    updateStatus('connecting', 'Подключение к PeerJS...');
+
+    peer = new Peer({
+      debug: 1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      }
+    });
+
+    peer.on('open', (id) => {
+      connectToHost();
+    });
+
+    peer.on('error', (err) => {
+      console.warn('PeerJS error:', err);
+      updateStatus('offline', 'Ошибка соединения');
+      scheduleReconnect();
+    });
+
+    // Прием видеозвонка от хоста
+    peer.on('call', (call) => {
+      call.answer(); // Отвечаем без своего потока
+      call.on('stream', (remoteStream) => {
+        video.srcObject = remoteStream;
+        video.play().catch(e => console.log('Autoplay play error:', e));
+        updateStatus('online', 'Трансляция активна');
+      });
+      call.on('close', () => {
+        updateStatus('connecting', 'Хост прервал поток');
+      });
+    });
+  }
+
+  function connectToHost() {
+    updateStatus('connecting', `Поиск хоста (${hostPeerId})...`);
+
+    dataConnection = peer.connect(hostPeerId, {
+      reliable: true
+    });
+
+    dataConnection.on('open', () => {
+      updateStatus('online', 'Канал управления подключен');
+    });
+
+    dataConnection.on('close', () => {
+      updateStatus('connecting', 'Хост отключился, повтор...');
+      scheduleReconnect();
+    });
+
+    dataConnection.on('error', (err) => {
+      console.warn('DataConnection error:', err);
+      scheduleReconnect();
+    });
+  }
+
+  function scheduleReconnect() {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => {
+      if (peer && !peer.destroyed) {
+        connectToHost();
+      } else {
+        initViewer();
+      }
+    }, 3000);
+  }
+
+  // Расчет нормализованных координат клика с учетом object-fit: contain
+  function getNormalizedCoordinates(e) {
+    const rect = video.getBoundingClientRect();
+    const vWidth = video.videoWidth;
+    const vHeight = video.videoHeight;
+
+    if (!vWidth || !vHeight) return null;
+
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const containerRatio = rect.width / rect.height;
+    const videoRatio = vWidth / vHeight;
+
+    let renderWidth, renderHeight, offsetX = 0, offsetY = 0;
+
+    if (containerRatio > videoRatio) {
+      // Полосы по бокам (слева и справа)
+      renderHeight = rect.height;
+      renderWidth = rect.height * videoRatio;
+      offsetX = (rect.width - renderWidth) / 2;
+    } else {
+      // Полосы сверху и снизу
+      renderWidth = rect.width;
+      renderHeight = renderWidth / videoRatio;
+      offsetY = (rect.height - renderHeight) / 2;
+    }
+
+    const videoX = clickX - offsetX;
+    const videoY = clickY - offsetY;
+
+    // Игнорируем клики по черным полям
+    if (videoX < 0 || videoX > renderWidth || videoY < 0 || videoY > renderHeight) {
+      return null;
+    }
+
+    return {
+      x: Math.max(0, Math.min(1, videoX / renderWidth)),
+      y: Math.max(0, Math.min(1, videoY / renderHeight))
+    };
+  }
+
+  function sendClick(e, button = 'left') {
+    const coords = getNormalizedCoordinates(e);
+    if (!coords) return;
+
+    // Визуальный отклик клика на экране
+    createRipple(e.clientX, e.clientY);
+
+    const payload = {
+      type: 'click',
+      x: coords.x,
+      y: coords.y,
+      button: button,
+      clicks: e.detail || 1
+    };
+
+    if (dataConnection && dataConnection.open) {
+      dataConnection.send(payload);
+    }
+  }
+
+  function createRipple(clientX, clientY) {
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+    ripple.style.left = clientX + 'px';
+    ripple.style.top = clientY + 'px';
+    container.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 400);
+  }
+
+  // Обработка левого клика
+  container.addEventListener('click', (e) => {
+    sendClick(e, 'left');
+  });
+
+  // Обработка правого клика
+  container.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    sendClick(e, 'right');
+  });
+
+  // Запуск
+  initViewer();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KMG Remote Stream · Хост-трансляция</title>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b1118;
+      --card: #131c26;
+      --border: #233446;
+      --text: #e2e8f0;
+      --muted: #7e91a5;
+      --accent: #00d2ff;
+      --accent-glow: rgba(0, 210, 255, 0.25);
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .brand span { color: var(--accent); }
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    h2 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    input[type="text"] {
+      background: #0a0f15;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    .btn {
+      background: var(--accent);
+      color: #0b1118;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.92; }
+    .btn:active { transform: scale(0.98); }
+    .btn-stop {
+      background: var(--red);
+      color: #fff;
+    }
+    .statuses {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #0a0f15;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .dot.busy { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+    .dot.offline { background: var(--red); }
+    .preview-box {
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .preview-header {
+      padding: 12px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      max-height: calc(100vh - 250px);
+      object-fit: contain;
+      background: #06090d;
+    }
+    .log-box {
+      background: #070b0f;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      height: 140px;
+      overflow-y: auto;
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      color: #8b9bb4;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+    }
+    .log-row { word-break: break-all; }
+    .log-time { color: var(--muted); margin-right: 6px; }
+    .log-click { color: #38bdf8; font-weight: bold; }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">KMG <span>Remote Host</span> · Трансляция и управление</div>
+  <div style="font-size: 13px; color: var(--muted);">Электронный демонстрационный стенд</div>
+</header>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Настройки соединения</h2>
+
+    <div class="field">
+      <label for="room-id">ID комнаты / сессии</label>
+      <input type="text" id="room-id" value="kmg-stream-demo" placeholder="kmg-stream-demo">
+    </div>
+
+    <div class="statuses">
+      <div class="status-row">
+        <span>Python-агент (ws:8765):</span>
+        <span class="status-indicator" id="agent-status"><span class="dot offline"></span> Отключен</span>
+      </div>
+      <div class="status-row">
+        <span>WebRTC (PeerJS):</span>
+        <span class="status-indicator" id="webrtc-status"><span class="dot offline"></span> Не создан</span>
+      </div>
+      <div class="status-row">
+        <span>Видеопоток:</span>
+        <span class="status-indicator" id="stream-status"><span class="dot offline"></span> Нет</span>
+      </div>
+      <div class="status-row">
+        <span>Зрителей подключено:</span>
+        <span class="status-indicator" id="viewers-count">0</span>
+      </div>
+    </div>
+
+    <button class="btn" id="btn-share">🖥️ Выбрать окно для стрима</button>
+    <button class="btn btn-stop" id="btn-stop" style="display: none;">⏹️ Остановить трансляцию</button>
+
+    <div class="hint">
+      <strong>Рекомендация:</strong> при выборе источника захвата выберите «Окно» нужного приложения или «Весь экран».
+    </div>
+
+    <h2>Журнал событий</h2>
+    <div class="log-box" id="logs"></div>
+  </div>
+
+  <div class="preview-box">
+    <div class="preview-header">
+      <span>Локальный предпросмотр трансляции</span>
+      <span id="res-info" style="color: var(--muted);">0x0</span>
+    </div>
+    <video id="preview" autoplay muted playsinline></video>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const logsEl = $('logs');
+  const preview = $('preview');
+  const btnShare = $('btn-share');
+  const btnStop = $('btn-stop');
+  const roomIdInput = $('room-id');
+
+  let localStream = null;
+  let peer = null;
+  let wsAgent = null;
+  let activeConnections = new Map(); // peerId -> DataConnection
+  let wsReconnectTimer = null;
+
+  function log(msg, isClick = false) {
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    const now = new Date().toTimeString().split(' ')[0];
+    row.innerHTML = `<span class="log-time">[${now}]</span><span class="${isClick ? 'log-click' : ''}">${msg}</span>`;
+    logsEl.prepend(row);
+  }
+
+  // 1. Подключение к локальному Python агенту
+  function connectAgent() {
+    if (wsAgent) {
+      try { wsAgent.close(); } catch(e) {}
+    }
+    const indicator = $('agent-status');
+    indicator.innerHTML = '<span class="dot busy"></span> Поиск...';
+
+    wsAgent = new WebSocket('ws://localhost:8765');
+    wsAgent.onopen = () => {
+      indicator.innerHTML = '<span class="dot online"></span> Готов';
+      log('Подключен к Python-агенту (ws://localhost:8765)');
+    };
+    wsAgent.onclose = () => {
+      indicator.innerHTML = '<span class="dot offline"></span> Отключен';
+      clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = setTimeout(connectAgent, 2500);
+    };
+    wsAgent.onerror = () => {
+      indicator.innerHTML = '<span class="dot offline"></span> Ошибка агента';
+    };
+  }
+
+  // 2. Инициализация PeerJS
+  function initPeer() {
+    const roomId = roomIdInput.value.trim() || 'kmg-stream-demo';
+    const hostPeerId = `${roomId}-host`;
+
+    if (peer) {
+      try { peer.destroy(); } catch(e) {}
+    }
+
+    const indicator = $('webrtc-status');
+    indicator.innerHTML = '<span class="dot busy"></span> Регистрация...';
+
+    peer = new Peer(hostPeerId, {
+      debug: 1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      }
+    });
+
+    peer.on('open', (id) => {
+      indicator.innerHTML = '<span class="dot online"></span> Ожидание зрителя';
+      log(`PeerJS зарегистрирован как: ${id}`);
+    });
+
+    peer.on('error', (err) => {
+      indicator.innerHTML = '<span class="dot offline"></span> Ошибка PeerJS';
+      log(`Ошибка PeerJS: ${err.type || err.message}`);
+    });
+
+    // Обработка входящего соединения DataChannel от Viewer
+    peer.on('connection', (conn) => {
+      log(`Входящее подключение зрителя: ${conn.peer}`);
+      activeConnections.set(conn.peer, conn);
+      updateViewersCount();
+
+      conn.on('open', () => {
+        log(`DataChannel со зрителем открыт (${conn.peer})`);
+        // Если уже есть активный стрим — сразу звоним зрителю
+        if (localStream) {
+          sendStreamTo(conn.peer);
+        }
+      });
+
+      conn.on('data', (data) => {
+        handleIncomingClick(data);
+      });
+
+      conn.on('close', () => {
+        log(`Зритель отключился (${conn.peer})`);
+        activeConnections.delete(conn.peer);
+        updateViewersCount();
+      });
+
+      conn.on('error', (err) => {
+        log(`Ошибка канала зрителя: ${err}`);
+      });
+    });
+
+    // Ответ на медиа-вызовы
+    peer.on('call', (call) => {
+      if (localStream) {
+        call.answer(localStream);
+        log(`Ответили на звонок зрителя: ${call.peer}`);
+      }
+    });
+  }
+
+  function updateViewersCount() {
+    $('viewers-count').textContent = activeConnections.size;
+  }
+
+  function sendStreamTo(viewerPeerId) {
+    if (!localStream || !peer) return;
+    log(`Отправка видеопотока зрителю: ${viewerPeerId}`);
+    peer.call(viewerPeerId, localStream);
+  }
+
+  function broadcastStream() {
+    activeConnections.forEach((conn, peerId) => {
+      sendStreamTo(peerId);
+    });
+  }
+
+  // 3. Обработка клика и пересылка в Python WebSocket
+  function handleIncomingClick(payload) {
+    let data = payload;
+    if (typeof payload === 'string') {
+      try { data = JSON.parse(payload); } catch(e) { return; }
+    }
+    if (data && data.type === 'click') {
+      const btn = data.button || 'left';
+      log(`Клик от зрителя: [${btn}] x=${data.x.toFixed(3)}, y=${data.y.toFixed(3)}`, true);
+
+      if (wsAgent && wsAgent.readyState === WebSocket.OPEN) {
+        wsAgent.send(JSON.stringify(data));
+      } else {
+        log('Предупреждение: Python-агент недоступен, клик не выполнен!');
+      }
+    }
+  }
+
+  // 4. Захват экрана / окна
+  btnShare.addEventListener('click', async () => {
+    try {
+      localStream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          displaySurface: 'window',
+          cursor: 'always',
+          frameRate: { ideal: 30, max: 60 }
+        },
+        audio: false
+      });
+
+      preview.srcObject = localStream;
+      $('stream-status').innerHTML = '<span class="dot online"></span> Активен';
+      btnShare.style.display = 'none';
+      btnStop.style.display = 'flex';
+
+      const videoTrack = localStream.getVideoTracks()[0];
+      const settings = videoTrack.getSettings();
+      $('res-info').textContent = `${settings.width || 0}x${settings.height || 0} (${settings.displaySurface || 'screen'})`;
+      log(`Захвачено окно: ${settings.width}x${settings.height}`);
+
+      videoTrack.onended = () => {
+        stopStream();
+      };
+
+      // Транслируем всем уже подключенным зрителям
+      broadcastStream();
+
+    } catch (err) {
+      log(`Ошибка выбора экрана: ${err.message || err}`);
+    }
+  });
+
+  function stopStream() {
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
+    preview.srcObject = null;
+    $('stream-status').innerHTML = '<span class="dot offline"></span> Нет';
+    $('res-info').textContent = '0x0';
+    btnShare.style.display = 'flex';
+    btnStop.style.display = 'none';
+    log('Трансляция остановлена');
+  }
+
+  btnStop.addEventListener('click', stopStream);
+  roomIdInput.addEventListener('change', () => {
+    initPeer();
+  });
+
+  // Автозапуск
+  connectAgent();
+  initPeer();
+</script>
+
+</body>
+</html>
