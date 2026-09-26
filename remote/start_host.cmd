@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 title KMG Remote Host · Запуск системы трансляции
-cd /d "%~dp0\.."
+cd /d "%~dp0"
 
 echo ========================================================
 echo   Запуск KMG Remote Host (Стример + Агент кликов)
@@ -16,7 +16,7 @@ if %errorlevel% neq 0 (
     call "%~dp0setup_host.cmd"
 )
 
-rem 2. Запуск локального веб-сервера (порт 8000) в фоновом окне, если порт свободен
+rem 2. Запуск локального веб-сервера (порт 8000) в папке скрипта
 netstat -ano | findstr ":8000" | findstr "LISTENING" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [+] Запуск локального HTTP сервера (http://localhost:8000)...
@@ -26,8 +26,8 @@ if %errorlevel% neq 0 (
     echo [i] Веб-сервер на порту 8000 уже активен.
 )
 
-rem 3. Открытие страницы хоста в браузере (Chrome / Edge / дефолтный)
-set "SENDER_URL=http://localhost:8000/remote/sender.html"
+rem 3. Открытие страницы хоста в браузере
+set "SENDER_URL=http://localhost:8000/sender.html"
 
 set "CHROME=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
 if not exist "%CHROME%" set "CHROME=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
