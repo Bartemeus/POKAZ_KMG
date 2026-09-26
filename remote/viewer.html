@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KMG Remote Viewer</title>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -30,116 +29,123 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #000;
+      background: #05080c;
       cursor: crosshair;
     }
     video {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      display: block;
-      pointer-events: auto;
+      pointer-events: none; /* Клик ловит родительский container */
     }
-    /* Индикатор клика (эффект ряби) */
-    .click-ripple {
-      position: absolute;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid #00d2ff;
-      background: rgba(0, 210, 255, 0.35);
-      transform: translate(-50%, -50%) scale(0.2);
-      pointer-events: none;
-      animation: ripple 0.35s ease-out forwards;
-      z-index: 100;
-    }
-    @keyframes ripple {
-      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
-    }
-    /* Компактный бейдж статуса */
-    #badge {
+    #status-badge {
       position: absolute;
       top: 12px;
-      right: 12px;
+      left: 12px;
       background: rgba(11, 17, 24, 0.85);
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 20px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #cbd5e1;
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 11px;
-      color: #cbd5e1;
-      z-index: 50;
-      pointer-events: none;
+      z-index: 10;
       transition: opacity 0.3s;
+      pointer-events: none;
     }
     .dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: #ef4444;
     }
-    .dot.online { background: #10b981; box-shadow: 0 0 6px #10b981; }
-    .dot.connecting { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+    .dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+    .dot.offline { background: #ef4444; }
+    .dot.connecting { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+
     #placeholder {
       position: absolute;
+      inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
+      justify-content: center;
+      gap: 16px;
       color: #64748b;
-      font-size: 14px;
-      text-align: center;
+      z-index: 5;
+      background: #070c12;
       pointer-events: none;
     }
-    #placeholder .spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid rgba(255,255,255,0.1);
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(0, 210, 255, 0.1);
       border-top-color: #00d2ff;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .click-ripple {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 2px solid #00d2ff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%) scale(0.2);
+      opacity: 1;
+      pointer-events: none;
+      animation: ripple 0.4s ease-out forwards;
+      z-index: 100;
+    }
+    @keyframes ripple {
+      to {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
 
 <div id="container">
-  <video id="remote-video" autoplay playsinline muted></video>
-  
-  <div id="placeholder">
-    <div class="spinner"></div>
-    <span id="placeholder-text">Подключение к трансляции хоста...</span>
+  <div id="status-badge">
+    <span class="dot connecting" id="status-dot"></span>
+    <span id="status-text">Инициализация...</span>
   </div>
 
-  <div id="badge">
-    <span class="dot" id="status-dot"></span>
-    <span id="status-text">Ожидание хоста...</span>
+  <div id="placeholder">
+    <div class="spinner"></div>
+    <div id="placeholder-text">Ожидание трансляции...</div>
   </div>
+
+  <video id="stream-video" autoplay playsinline muted></video>
 </div>
 
 <script>
-  const params = new URLSearchParams(location.search);
+  const params = new URLSearchParams(window.location.search);
   const roomId = params.get('room') || 'kmg-stream-demo';
-  const hideBadge = params.get('badge') === '0';
-  const hostPeerId = `${roomId}-host`;
+  const showBadge = params.get('badge') !== '0';
 
-  const video = document.getElementById('remote-video');
   const container = document.getElementById('container');
-  const badge = document.getElementById('badge');
+  const video = document.getElementById('stream-video');
+  const statusBadge = document.getElementById('status-badge');
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
   const placeholder = document.getElementById('placeholder');
   const placeholderText = document.getElementById('placeholder-text');
 
-  if (hideBadge) badge.style.display = 'none';
+  if (!showBadge) {
+    statusBadge.style.display = 'none';
+  }
 
-  let peer = null;
-  let dataConnection = null;
+  const viewerId = 'viewer_' + Math.random().toString(36).substring(2, 8);
+  let ws = null;
+  let pc = null;
   let reconnectTimer = null;
 
   function updateStatus(state, text) {
@@ -154,76 +160,131 @@
   }
 
   function initViewer() {
-    updateStatus('connecting', 'Подключение к PeerJS...');
+    updateStatus('connecting', 'Подключение к хосту...');
 
-    peer = new Peer({
-      debug: 1,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+    const serverHost = params.get('server') || window.location.hostname || 'localhost';
+    const serverPort = params.get('port') || '8765';
+    const wsUrl = `ws://${serverHost}:${serverPort}`;
+
+    if (ws) {
+      try { ws.close(); } catch(e) {}
+    }
+
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      updateStatus('connecting', 'Ожидание видеопотока...');
+      ws.send(JSON.stringify({
+        type: 'register',
+        role: 'viewer',
+        room: roomId,
+        viewer_id: viewerId
+      }));
+    };
+
+    ws.onmessage = async (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        handleServerMessage(msg);
+      } catch (e) {
+        console.error('Ошибка JSON:', e);
       }
+    };
+
+    ws.onclose = () => {
+      updateStatus('offline', 'Хост недоступен, повтор...');
+      closePeer();
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(initViewer, 2000);
+    };
+
+    ws.onerror = () => {
+      updateStatus('offline', 'Ошибка подключения');
+    };
+  }
+
+  async function handleServerMessage(msg) {
+    if (msg.type === 'host_status') {
+      if (!msg.online) {
+        updateStatus('connecting', 'Хост приостановил трансляцию');
+        closePeer();
+      }
+    } else if (msg.type === 'signal') {
+      const signalData = msg.data;
+      if (!signalData) return;
+
+      if (signalData.sdp) {
+        // Получен SDP Offer от стримера
+        setupPeerConnection();
+        await pc.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        ws.send(JSON.stringify({
+          type: 'signal',
+          target: 'sender',
+          room: roomId,
+          data: { sdp: answer }
+        }));
+      } else if (signalData.candidate) {
+        if (pc) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(signalData.candidate));
+          } catch(e) {
+            console.warn('Ошибка добавления ICE кандидата:', e);
+          }
+        }
+      }
+    }
+  }
+
+  function setupPeerConnection() {
+    closePeer();
+
+    pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
     });
 
-    peer.on('open', (id) => {
-      connectToHost();
-    });
-
-    peer.on('error', (err) => {
-      console.warn('PeerJS error:', err);
-      updateStatus('offline', 'Ошибка соединения');
-      scheduleReconnect();
-    });
-
-    // Прием видеозвонка от хоста
-    peer.on('call', (call) => {
-      call.answer(); // Отвечаем без своего потока
-      call.on('stream', (remoteStream) => {
-        video.srcObject = remoteStream;
-        video.play().catch(e => console.log('Autoplay play error:', e));
+    pc.ontrack = (event) => {
+      if (event.streams && event.streams[0]) {
+        video.srcObject = event.streams[0];
+        video.play().catch(e => console.log('Autoplay error:', e));
         updateStatus('online', 'Трансляция активна');
-      });
-      call.on('close', () => {
-        updateStatus('connecting', 'Хост прервал поток');
-      });
-    });
-  }
-
-  function connectToHost() {
-    updateStatus('connecting', `Поиск хоста (${hostPeerId})...`);
-
-    dataConnection = peer.connect(hostPeerId, {
-      reliable: true
-    });
-
-    dataConnection.on('open', () => {
-      updateStatus('online', 'Канал управления подключен');
-    });
-
-    dataConnection.on('close', () => {
-      updateStatus('connecting', 'Хост отключился, повтор...');
-      scheduleReconnect();
-    });
-
-    dataConnection.on('error', (err) => {
-      console.warn('DataConnection error:', err);
-      scheduleReconnect();
-    });
-  }
-
-  function scheduleReconnect() {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = setTimeout(() => {
-      if (peer && !peer.destroyed) {
-        connectToHost();
-      } else {
-        initViewer();
       }
-    }, 3000);
+    };
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'signal',
+          target: 'sender',
+          room: roomId,
+          data: { candidate: event.candidate }
+        }));
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'connected') {
+        updateStatus('online', 'Трансляция активна');
+      } else if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+        updateStatus('connecting', 'Связь потеряна, ожидание...');
+      }
+    };
   }
 
-  // Расчет нормализованных координат клика с учетом object-fit: contain
+  function closePeer() {
+    if (pc) {
+      try { pc.close(); } catch(e) {}
+      pc = null;
+    }
+    video.srcObject = null;
+  }
+
+  // Расчет нормализованных координат клика (0.0 - 1.0) с учетом object-fit: contain
   function getNormalizedCoordinates(e) {
     const rect = video.getBoundingClientRect();
     const vWidth = video.videoWidth;
@@ -240,12 +301,10 @@
     let renderWidth, renderHeight, offsetX = 0, offsetY = 0;
 
     if (containerRatio > videoRatio) {
-      // Полосы по бокам (слева и справа)
       renderHeight = rect.height;
       renderWidth = rect.height * videoRatio;
       offsetX = (rect.width - renderWidth) / 2;
     } else {
-      // Полосы сверху и снизу
       renderWidth = rect.width;
       renderHeight = renderWidth / videoRatio;
       offsetY = (rect.height - renderHeight) / 2;
@@ -254,7 +313,6 @@
     const videoX = clickX - offsetX;
     const videoY = clickY - offsetY;
 
-    // Игнорируем клики по черным полям
     if (videoX < 0 || videoX > renderWidth || videoY < 0 || videoY > renderHeight) {
       return null;
     }
@@ -269,7 +327,6 @@
     const coords = getNormalizedCoordinates(e);
     if (!coords) return;
 
-    // Визуальный отклик клика на экране
     createRipple(e.clientX, e.clientY);
 
     const payload = {
@@ -280,8 +337,8 @@
       clicks: e.detail || 1
     };
 
-    if (dataConnection && dataConnection.open) {
-      dataConnection.send(payload);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
     }
   }
 
@@ -294,12 +351,10 @@
     setTimeout(() => ripple.remove(), 400);
   }
 
-  // Обработка левого клика
   container.addEventListener('click', (e) => {
     sendClick(e, 'left');
   });
 
-  // Обработка правого клика
   container.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     sendClick(e, 'right');
