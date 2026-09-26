@@ -120,6 +120,20 @@ async def handle_client(websocket):
                                 "data": signal_data
                             }))
 
+            # 2.1. Резервный видеопоток через WebSocket (на случай блокировки WebRTC UDP межсетевым экраном)
+            elif msg_type == "frame":
+                room_id = client_info.get("room") or "kmg-stream-demo"
+                frame_data = data.get("data")
+                if room_id in ROOMS:
+                    for v_ws in list(ROOMS[room_id]["viewers"].values()):
+                        try:
+                            await v_ws.send(json.dumps({
+                                "type": "frame",
+                                "data": frame_data
+                            }))
+                        except Exception:
+                            pass
+
             # 3. Обработка клика мыши
             elif msg_type == "click":
                 norm_x = float(data.get("x", 0.0))

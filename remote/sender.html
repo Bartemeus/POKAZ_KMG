@@ -450,13 +450,51 @@
 
       // Переподключаем всех зрителей с новым потоком
       broadcastStreamToAll();
+      startFrameStream();
 
     } catch (err) {
       log(`Ошибка выбора экрана: ${err.message || err}`);
     }
   });
 
+  const offscreenCanvas = document.createElement('canvas');
+  const offscreenCtx = offscreenCanvas.getContext('2d');
+  let frameStreamTimer = null;
+
+  function startFrameStream() {
+    stopFrameStream();
+    frameStreamTimer = setInterval(() => {
+      if (!localStream || !preview.videoWidth || !wsAgent || wsAgent.readyState !== WebSocket.OPEN) return;
+      const vw = preview.videoWidth;
+      const vh = preview.videoHeight;
+      const maxDim = 1280;
+      let targetW = vw;
+      let targetH = vh;
+      if (targetW > maxDim) {
+        targetH = Math.round(vh * (maxDim / targetW));
+        targetW = maxDim;
+      }
+      offscreenCanvas.width = targetW;
+      offscreenCanvas.height = targetH;
+      offscreenCtx.drawImage(preview, 0, 0, targetW, targetH);
+      const dataUrl = offscreenCanvas.toDataURL('image/jpeg', 0.65);
+      wsAgent.send(JSON.stringify({
+        type: 'frame',
+        room: roomIdInput.value.trim() || 'kmg-stream-demo',
+        data: dataUrl
+      }));
+    }, 66); // ~15 FPS
+  }
+
+  function stopFrameStream() {
+    if (frameStreamTimer) {
+      clearInterval(frameStreamTimer);
+      frameStreamTimer = null;
+    }
+  }
+
   function stopStream() {
+    stopFrameStream();
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop());
       localStream = null;
