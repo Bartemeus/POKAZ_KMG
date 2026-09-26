@@ -163,7 +163,7 @@ async def handle_client(websocket):
 
             # 2.1. Резервный видеоканал через сокет
             elif msg_type == "frame":
-                room_id = client_info.get("room") or "kmg-stream-demo"
+                room_id = data.get("room") or client_info.get("room") or "kmg-stream-demo"
                 frame_data = data.get("data")
                 if room_id in ROOMS:
                     for v_ws in list(ROOMS[room_id]["viewers"].values()):
@@ -266,7 +266,7 @@ async def main():
     print(f"  WebSocket & Signaling: ws://{HOST}:{PORT}")
     print("=" * 60)
 
-    async with websockets.serve(handle_client, HOST, PORT):
+    async with websockets.serve(handle_client, HOST, PORT, max_size=10*1024*1024):
         await asyncio.Future()
 
 if __name__ == "__main__":

@@ -435,6 +435,7 @@
       });
 
       preview.srcObject = localStream;
+      preview.play().catch(() => {});
       $('stream-status').innerHTML = '<span class="dot online"></span> Активен';
       btnShare.style.display = 'none';
       btnStop.style.display = 'flex';
@@ -450,13 +451,54 @@
 
       // Переподключаем всех зрителей с новым потоком
       broadcastStreamToAll();
+      startFrameStream();
 
     } catch (err) {
       log(`Ошибка выбора экрана: ${err.message || err}`);
     }
   });
 
+  const captureCanvas = document.createElement('canvas');
+  const captureCtx = captureCanvas.getContext('2d');
+  let frameStreamTimer = null;
+
+  function startFrameStream() {
+    stopFrameStream();
+    frameStreamTimer = setInterval(() => {
+      if (!localStream || !preview.videoWidth || !wsAgent || wsAgent.readyState !== WebSocket.OPEN) return;
+      if (wsAgent.bufferedAmount > 256 * 1024) return;
+      const vw = preview.videoWidth;
+      const vh = preview.videoHeight;
+      const maxDim = 1280;
+      let targetW = vw;
+      let targetH = vh;
+      if (targetW > maxDim) {
+        targetH = Math.round(vh * (maxDim / targetW));
+        targetW = maxDim;
+      }
+      if (captureCanvas.width !== targetW || captureCanvas.height !== targetH) {
+        captureCanvas.width = targetW;
+        captureCanvas.height = targetH;
+      }
+      captureCtx.drawImage(preview, 0, 0, targetW, targetH);
+      const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.65);
+      wsAgent.send(JSON.stringify({
+        type: 'frame',
+        room: roomIdInput.value.trim() || 'kmg-stream-demo',
+        data: dataUrl
+      }));
+    }, 45); // ~22 FPS
+  }
+
+  function stopFrameStream() {
+    if (frameStreamTimer) {
+      clearInterval(frameStreamTimer);
+      frameStreamTimer = null;
+    }
+  }
+
   function stopStream() {
+    stopFrameStream();
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop());
       localStream = null;

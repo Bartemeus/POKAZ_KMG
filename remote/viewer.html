@@ -128,7 +128,8 @@
     </div>
   </div>
 
-  <video id="stream-video" autoplay playsinline muted></video>
+  <canvas id="live-canvas" style="width: 100%; height: 100%; object-fit: contain; display: none; pointer-events: none;"></canvas>
+  <video id="stream-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: contain; display: none; pointer-events: none;"></video>
 </div>
 
 <script>
@@ -265,6 +266,24 @@
           }
         }
       }
+    } else if (msg.type === 'frame') {
+      const canvas = document.getElementById('live-canvas');
+      const ctx = canvas.getContext('2d');
+      if (!window.liveImg) window.liveImg = new Image();
+      window.liveImg.onload = () => {
+        if (canvas.width !== window.liveImg.width || canvas.height !== window.liveImg.height) {
+          canvas.width = window.liveImg.width;
+          canvas.height = window.liveImg.height;
+        }
+        ctx.drawImage(window.liveImg, 0, 0);
+        if (!webrtcActive) {
+          canvas.style.display = 'block';
+          video.style.display = 'none';
+          placeholder.style.display = 'none';
+          updateStatus('online', 'Трансляция активна');
+        }
+      };
+      window.liveImg.src = msg.data;
     }
   }
 
@@ -283,16 +302,12 @@
 
     pc.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
-        webrtcActive = true;
-        video.style.display = 'block';
-
         if (video.srcObject !== event.streams[0]) {
           video.srcObject = event.streams[0];
           video.play().catch(e => {
             if (e.name !== 'AbortError') console.warn('Play error:', e);
           });
         }
-        updateStatus('online', 'Трансляция активна');
       }
     };
 
@@ -311,10 +326,15 @@
       console.log('WebRTC State:', pc.connectionState);
       if (pc.connectionState === 'connected') {
         webrtcActive = true;
-        updateStatus('online', 'Трансляция активна');
-      } else if (pc.connectionState === 'failed') {
+        const canvas = document.getElementById('live-canvas');
+        if (canvas) canvas.style.display = 'none';
+        video.style.display = 'block';
+        placeholder.style.display = 'none';
+        updateStatus('online', 'Трансляция активна (WebRTC)');
+      } else if (['failed', 'disconnected', 'closed'].includes(pc.connectionState)) {
         webrtcActive = false;
-        updateStatus('connecting', 'Связь потеряна, ожидание...');
+        closePeer();
+        console.warn('WebRTC недоступен (UDP заблокирован в сети), активен прямой TCP-видеоканал');
       }
     };
 
@@ -322,7 +342,15 @@
       console.log('ICE State:', pc.iceConnectionState);
       if (['connected', 'completed'].includes(pc.iceConnectionState)) {
         webrtcActive = true;
-        updateStatus('online', 'Трансляция активна');
+        const canvas = document.getElementById('live-canvas');
+        if (canvas) canvas.style.display = 'none';
+        video.style.display = 'block';
+        placeholder.style.display = 'none';
+        updateStatus('online', 'Трансляция активна (WebRTC)');
+      } else if (['failed', 'disconnected'].includes(pc.iceConnectionState)) {
+        webrtcActive = false;
+        closePeer();
+        console.warn('WebRTC ICE сбой (UDP заблокирован в сети), активен прямой TCP-видеоканал');
       }
     };
   }
@@ -334,15 +362,26 @@
       pc = null;
     }
     video.srcObject = null;
+    video.style.display = 'none';
+    const canvas = document.getElementById('live-canvas');
+    if (canvas && window.lastFrameReceived) {
+      canvas.style.display = 'block';
+      placeholder.style.display = 'none';
+      updateStatus('online', 'Трансляция активна');
+    }
   }
 
   // Расчет нормализованных координат клика (0.0 - 1.0) с учетом object-fit: contain
   function getNormalizedCoordinates(e) {
-    if (!video.videoWidth || !video.videoHeight) return null;
+    const canvas = document.getElementById('live-canvas');
+    const isVideo = webrtcActive && video.videoWidth > 0 && video.style.display !== 'none';
+    const targetEl = isVideo ? video : canvas;
+    const vWidth = isVideo ? video.videoWidth : canvas.width;
+    const vHeight = isVideo ? video.videoHeight : canvas.height;
 
-    const rect = video.getBoundingClientRect();
-    const vWidth = video.videoWidth;
-    const vHeight = video.videoHeight;
+    if (!vWidth || !vHeight) return null;
+
+    const rect = targetEl.getBoundingClientRect();
 
     if (!vWidth || !vHeight) return null;
 
