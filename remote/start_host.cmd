@@ -29,8 +29,7 @@ goto OPEN_BROWSER
 echo [i] HTTP server on port 8000 is already active.
 
 :OPEN_BROWSER
-rem 3. Open sender.html in Chrome or default browser
-set "SENDER_URL=http://localhost:8000/sender.html"
+set "SENDER_URL=http://localhost:8000/sender.html?v=%RANDOM%"
 
 set "CHROME=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
 if not exist "%CHROME%" set "CHROME=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
