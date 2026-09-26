@@ -1,6 +1,8 @@
 import asyncio
 import json
 import sys
+import time
+import ctypes
 import pyautogui
 import websockets
 
@@ -9,19 +11,55 @@ try:
 except ImportError:
     gw = None
 
+# Включаем учет масштабирования DPI в Windows (чтобы координаты 100% совпадали с пикселями экрана)
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # Per-monitor DPI aware
+except Exception:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
+
 # Немедленный вывод в консоль без буферизации
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(line_buffering=True)
 
-# Предотвращаем падение при кликах в углах экрана (0, 0)
 pyautogui.FAILSAFE = False
-pyautogui.PAUSE = 0.02
+pyautogui.PAUSE = 0.01
 
 HOST = "0.0.0.0"
 PORT = 8765
 
-# Структура комнат: room_id -> {"sender": websocket, "viewers": {viewer_id: websocket}}
 ROOMS = {}
+
+def get_screen_resolution():
+    try:
+        user32 = ctypes.windll.user32
+        w = user32.GetSystemMetrics(0)
+        h = user32.GetSystemMetrics(1)
+        if w > 0 and h > 0:
+            return w, h
+    except Exception:
+        pass
+    return pyautogui.size()
+
+def perform_hardware_click(x, y, button="left", clicks=1):
+    try:
+        user32 = ctypes.windll.user32
+        user32.SetCursorPos(int(x), int(y))
+        
+        down_flag = 0x0002 if button == "left" else (0x0008 if button == "right" else 0x0020)
+        up_flag = 0x0004 if button == "left" else (0x0010 if button == "right" else 0x0040)
+        
+        for i in range(clicks):
+            user32.mouse_event(down_flag, 0, 0, 0, 0)
+            time.sleep(0.03)
+            user32.mouse_event(up_flag, 0, 0, 0, 0)
+            if clicks > 1 and i < clicks - 1:
+                time.sleep(0.05)
+    except Exception as exc:
+        print(f"[HostAgent] Ctypes click error, fallback to pyautogui: {exc}")
+        pyautogui.click(x=x, y=y, button=button, clicks=clicks)
 
 async def handle_client(websocket):
     client_addr = websocket.remote_address
@@ -38,9 +76,9 @@ async def handle_client(websocket):
 
             msg_type = data.get("type", "click")
 
-            # 1. Регистрация роли (стример или зритель)
+            # 1. Регистрация
             if msg_type == "register":
-                role = data.get("role")  # "sender" или "viewer"
+                role = data.get("role")
                 room_id = data.get("room", "kmg-stream-demo")
                 client_info["role"] = role
                 client_info["room"] = room_id
@@ -58,11 +96,9 @@ async def handle_client(websocket):
                         "room": room_id,
                         "viewers_count": viewers_cnt
                     }))
-                    # Оповещаем уже подключенных зрителей, что стример онлайн
                     for v_id, v_ws in list(ROOMS[room_id]["viewers"].items()):
                         try:
                             await v_ws.send(json.dumps({"type": "host_status", "online": True, "room": room_id}))
-                            # И просим хост отправить оффер зрителю
                             await websocket.send(json.dumps({"type": "viewer_joined", "viewer_id": v_id, "room": room_id}))
                         except Exception:
                             pass
@@ -83,7 +119,6 @@ async def handle_client(websocket):
                         "host_online": is_host_online
                     }))
 
-                    # Оповещаем стримера о новом зрителе для создания WebRTC PeerConnection
                     if is_host_online:
                         try:
                             await sender_ws.send(json.dumps({
@@ -95,9 +130,9 @@ async def handle_client(websocket):
                         except Exception:
                             pass
 
-            # 2. Маршрутизация WebRTC сигналинга (SDP Offer, SDP Answer, ICE Candidates)
+            # 2. Сигналинг
             elif msg_type == "signal":
-                target = data.get("target")  # "sender" или ID зрителя
+                target = data.get("target")
                 room_id = data.get("room") or client_info.get("room", "kmg-stream-demo")
                 signal_data = data.get("data")
                 sender_id = client_info.get("viewer_id") or "sender"
@@ -120,7 +155,7 @@ async def handle_client(websocket):
                                 "data": signal_data
                             }))
 
-            # 2.1. Резервный видеопоток через WebSocket (на случай блокировки WebRTC UDP межсетевым экраном)
+            # 2.1. Резервный видеоканал через сокет
             elif msg_type == "frame":
                 room_id = client_info.get("room") or "kmg-stream-demo"
                 frame_data = data.get("data")
@@ -134,7 +169,7 @@ async def handle_client(websocket):
                         except Exception:
                             pass
 
-            # 3. Обработка клика мыши
+            # 3. Клик мыши
             elif msg_type == "click":
                 norm_x = float(data.get("x", 0.0))
                 norm_y = float(data.get("y", 0.0))
@@ -156,18 +191,17 @@ async def handle_client(websocket):
                     real_y = int(target_window.top + norm_y * target_window.height)
                     mode_info = f"Окно '{target_window.title}'"
                 else:
-                    screen_w, screen_h = pyautogui.size()
+                    screen_w, screen_h = get_screen_resolution()
                     real_x = int(norm_x * screen_w)
                     real_y = int(norm_y * screen_h)
                     mode_info = f"Экран ({screen_w}x{screen_h})"
 
-                print(f"[HostAgent] Клик [{button} x{clicks}]: ({norm_x:.4f}, {norm_y:.4f}) -> ({real_x}, {real_y}) [{mode_info}]")
+                print(f"[HostAgent] Клик [{button} x{clicks}]: ({norm_x:.4f}, {norm_y:.4f}) -> Реальные координаты ({real_x}, {real_y}) [{mode_info}]")
                 try:
-                    pyautogui.click(x=real_x, y=real_y, button=button, clicks=clicks)
+                    perform_hardware_click(real_x, real_y, button=button, clicks=clicks)
                 except Exception as err:
                     print(f"[HostAgent] Ошибка при клике: {err}")
 
-                # Пересылаем событие клика хосту для отображения в журнале sender.html
                 room_id = client_info.get("room")
                 if room_id and room_id in ROOMS and ROOMS[room_id]["sender"]:
                     try:
@@ -219,12 +253,11 @@ async def handle_client(websocket):
         print(f"[HostAgent] Соединение закрыто: {client_addr}")
 
 async def main():
-    screen_w, screen_h = pyautogui.size()
+    screen_w, screen_h = get_screen_resolution()
     print("=" * 60)
     print("  KMG Remote Presentation Host Agent & WebRTC Signaling")
-    print(f"  Разрешение экрана: {screen_w}x{screen_h}")
+    print(f"  Разрешение экрана (DPI-aware): {screen_w}x{screen_h}")
     print(f"  WebSocket & Signaling: ws://{HOST}:{PORT}")
-    print("  Полностью локальный режим (без внешних облачных серверов)")
     print("=" * 60)
 
     async with websockets.serve(handle_client, HOST, PORT):

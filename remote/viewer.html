@@ -385,11 +385,26 @@
     };
   }
 
+  function showClickIndicator(text) {
+    let ind = document.getElementById('click-indicator');
+    if (!ind) {
+      ind = document.createElement('div');
+      ind.id = 'click-indicator';
+      ind.style.cssText = 'position:absolute;bottom:12px;right:12px;background:rgba(11,17,24,0.85);backdrop-filter:blur(6px);border:1px solid rgba(0,210,255,0.4);color:#38bdf8;padding:4px 10px;border-radius:12px;font-size:11px;font-family:monospace;pointer-events:none;z-index:20;transition:opacity 0.2s;';
+      container.appendChild(ind);
+    }
+    ind.textContent = text;
+    ind.style.opacity = '1';
+    clearTimeout(ind.hideTimer);
+    ind.hideTimer = setTimeout(() => { ind.style.opacity = '0'; }, 1000);
+  }
+
   function sendClick(e, button = 'left') {
     const coords = getNormalizedCoordinates(e);
     if (!coords) return;
 
     createRipple(e.clientX, e.clientY);
+    showClickIndicator(`Клик: ${(coords.x * 100).toFixed(1)}%, ${(coords.y * 100).toFixed(1)}%`);
 
     const payload = {
       type: 'click',
@@ -398,6 +413,8 @@
       button: button,
       clicks: e.detail || 1
     };
+
+    console.log('[Viewer] Click sent:', payload);
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(payload));
