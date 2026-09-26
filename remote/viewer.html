@@ -121,6 +121,11 @@
   <div id="placeholder">
     <div class="spinner"></div>
     <div id="placeholder-text">Ожидание трансляции...</div>
+    <div id="host-config-bar" style="margin-top: 14px; display: flex; gap: 8px; pointer-events: auto; align-items: center; background: rgba(13, 21, 31, 0.85); padding: 8px 12px; border-radius: 8px; border: 1px solid #1a2736;">
+      <span style="font-size: 11px; color: #7e91a5; text-transform: uppercase;">Хост:</span>
+      <input type="text" id="host-ip-input" placeholder="10.122.149.90" style="background: #080d13; border: 1px solid #233446; color: #38bdf8; padding: 4px 8px; border-radius: 4px; font-size: 12px; outline: none; width: 130px; font-family: monospace;">
+      <button id="host-connect-btn" style="background: #00d2ff; color: #0b1118; border: none; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 11px; cursor: pointer;">OK</button>
+    </div>
   </div>
 
   <video id="stream-video" autoplay playsinline muted></video>
@@ -138,6 +143,29 @@
   const statusText = document.getElementById('status-text');
   const placeholder = document.getElementById('placeholder');
   const placeholderText = document.getElementById('placeholder-text');
+  const hostInput = document.getElementById('host-ip-input');
+  const hostBtn = document.getElementById('host-connect-btn');
+
+  let currentHost = params.get('server') || localStorage.getItem('kmg_remote_host') || 
+                    (window.location.hostname && window.location.hostname !== 'localhost' ? window.location.hostname : '10.122.149.90');
+
+  if (hostInput) {
+    hostInput.value = currentHost;
+    hostBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newIp = hostInput.value.trim();
+      if (newIp) {
+        currentHost = newIp;
+        localStorage.setItem('kmg_remote_host', newIp);
+        initViewer();
+      }
+    });
+    hostInput.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') hostBtn.click();
+    });
+    hostInput.addEventListener('click', (e) => e.stopPropagation());
+  }
 
   if (!showBadge) {
     statusBadge.style.display = 'none';
@@ -160,11 +188,10 @@
   }
 
   function initViewer() {
-    updateStatus('connecting', 'Подключение к хосту...');
+    updateStatus('connecting', `Подключение к ${currentHost}:8765...`);
 
-    const serverHost = params.get('server') || window.location.hostname || 'localhost';
     const serverPort = params.get('port') || '8765';
-    const wsUrl = `ws://${serverHost}:${serverPort}`;
+    const wsUrl = `ws://${currentHost}:${serverPort}`;
 
     if (ws) {
       try { ws.close(); } catch(e) {}
