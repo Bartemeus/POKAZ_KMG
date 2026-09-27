@@ -378,18 +378,20 @@
 
 <!-- ═══ Content of an open layer (right, 70 % of the screen) ═════════════
      One view per layer; the reservoir has one per step (GGDM, step 0, has
-     no external tool and never opens). JS marks the current view and plays
-     its data-video in the shared <video>. The well layer embeds the local
-     DrillSpot application across the drawer instead.
+     no external tool and never opens). JS marks the current view and either
+     plays its data-video in the shared <video> or embeds a local application
+     across the drawer. The reservoir strategy uses NUMEX, the well layer uses
+     DrillSpot.
      24.09 (Adil): titles use the customer's words, not file names; the
      "← к цифровому двойнику" button and the amber kicker were removed —
      going back is the ↩ button next to the mini stack. Their markup stays,
      hidden in styles/content.css. -->
 <aside id="content" inert>
   <button id="content-back">← к цифровому двойнику</button>
-  <section class="content-view" data-zone="reservoir" data-step="1" data-video="NUMEX_cut.mp4">
+  <section class="content-view content-view-app" data-zone="reservoir" data-step="1">
     <div class="content-kicker">ЦД пласта · проект 01</div>
     <div class="content-name">Цифровой двойник пласта</div>
+    <iframe id="content-numex" data-src="NUMEX.html?в_презентации=1" title="NUMEX — цифровой двойник пласта" allow="fullscreen"></iframe>
   </section>
   <section class="content-view" data-zone="reservoir" data-step="2" data-video="NUMEX_optimize_cut.mp4">
     <div class="content-kicker">ЦД пласта · проект 01</div>

@@ -127,6 +127,13 @@ export function bindInput(){
   canvas.addEventListener('click', onCanvasClick);
 
   addEventListener('keydown', event => { if(event.key === 'Escape') onEscape(); });
+  /* NUMEX owns keyboard input while its iframe is focused. On an otherwise
+     unused Escape it asks the slide to close the layer, so the presenter does
+     not get trapped inside the embedded application. */
+  addEventListener('message', event => {
+    const numexFrame = document.getElementById('content-numex');
+    if(event.source === numexFrame?.contentWindow && event.data?.тип === 'NUMEX:закрыть') onEscape();
+  });
   if(IN_FRAME) addEventListener('keydown', forwardToParent);
 
   document.getElementById('panel-close').addEventListener('click', () => {
