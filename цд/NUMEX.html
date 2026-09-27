@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nedra.NUMEX — Система разработки</title>
+  <title>Nedra.NUMEX</title>
   <link rel="stylesheet" href="NUMEX.css">
+  <link rel="stylesheet" href="NUMEX/pages.css">
+  <link rel="stylesheet" href="NUMEX/charts.css">
+  <link rel="stylesheet" href="NUMEX/workspace.css">
 </head>
 <body>
 <div id="оболочка">
@@ -39,15 +42,15 @@
 
     <aside class="левая-панель" aria-label="Параметры расчета">
       <nav class="разделы" aria-label="Разделы проекта">
-        <button disabled>Параметры расчета</button>
-        <button disabled>Описание пласта</button>
-        <button disabled>Инициализация</button>
-        <button disabled class="выбран" aria-current="page">Система разработки</button>
-        <button disabled>Заканчивание</button>
-        <button disabled>Сеть сбора</button>
-        <button disabled>Экономика</button>
-        <button disabled>Серийные расчеты</button>
-        <button disabled>Результаты, графики</button>
+        <button data-page="calculation">Параметры расчета</button>
+        <button data-page="reservoir">Описание пласта</button>
+        <button data-page="initialization">Инициализация</button>
+        <button data-page="development">Система разработки</button>
+        <button data-page="completion">Заканчивание</button>
+        <button data-page="gathering">Сеть сбора</button>
+        <button data-page="economics">Экономика</button>
+        <button data-page="scenarios">Серийные расчеты</button>
+        <button data-page="results">Результаты, графики</button>
       </nav>
       <form id="расчетные-параметры" class="параметры-слева">
         <fieldset class="режимы">
@@ -129,6 +132,7 @@
             <g id="вид-карты" pointer-events="none"><g id="изображение-карты" transform="translate(35 124)"></g></g>
             <g id="измерение" pointer-events="none"></g>
             <rect id="сетка-карты" width="881" height="880" fill="none" pointer-events="none"/>
+            <rect id="map-zoom-box" hidden fill="#227cbb22" stroke="#222" stroke-width="1" stroke-dasharray="4 3" pointer-events="none"/>
           </g>
           <g id="цветовая-шкала" class="подписи-осей">
             <rect x="14.5" y="14.5" width="26" height="230" fill="url(#шкала-цвета)" stroke="#111"/>
@@ -148,5 +152,8 @@
 </div>
 <script src="NUMEX/map.js"></script>
 <script src="NUMEX.js"></script>
+<script src="NUMEX/pages.js"></script>
+<script src="NUMEX/charts.js"></script>
+<script src="NUMEX/workspace.js"></script>
 </body>
 </html>
