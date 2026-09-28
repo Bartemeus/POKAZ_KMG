@@ -2410,7 +2410,13 @@ function refresh(){
   const isFirstMove = replacesStack && !panel.classList.contains('вместо-стека');
   $('stack').classList.remove('скрыт');
   $('stack').classList.toggle('выбран', replacesStack);
-  $('effects-overview').classList.toggle('у-стека', replacesStack);
+  /* 28.09 (Адиль): «Цифровой двойник пласта» с раскрытыми шагами налезал на
+     блок эффектов (финальная карточка занимает 4 строки, стек с top:200 —
+     они пересекаются на десятки пикселей). Отключаю режим «у-стека»: блок
+     эффектов остаётся в исходной верхней позиции (широкая полоса под h1,
+     2 карточки в 2 колонки), стек с раскрытыми шагами уходит ниже него —
+     ничего не пересекается. */
+  $('effects-overview').classList.remove('у-стека');
   if(isFirstMove) panel.classList.remove('vis');
   panel.classList.toggle('вместо-стека', replacesStack);
   // Фиксируем начальную точку слева до .vis, чтобы панель именно встала вверх,
@@ -3013,10 +3019,17 @@ function animate(){
     }
     // подслои пласта: свой цвет, лёгкое разделение, клипы следуют за слоем и масштабом
     if(z.subs3d){
-      const plastActive = state.openId ? state.hover === 'plast' : act === 'plast';
+      /* 28.09 (Адиль): «когда нажимаю на слой пласта, оно должно в мини-тортике
+         стоять выделенным». Раньше в state.openId подсветка шагов брала
+         state.hover — с уходом hover-механики он всегда null, и в мини-режиме
+         активный шаг не выделялся. Теперь при state.openId === 'plast' берём
+         panelState.sub напрямую (то, что сейчас показывается в контенте
+         справа) — соответствующая плита в мини становится крупнее и с
+         голограммой, соседние — приглушены и меньше. */
+      const plastActive = state.openId ? state.openId === 'plast' : act === 'plast';
       const aSub = state.openId
-        ? (state.hover === 'plast' ? state.hoverSub : null)
-        : (state.locked === 'plast' ? panelState.sub : (state.hover === 'plast' ? state.hoverSub : null));
+        ? (state.openId === 'plast' ? panelState.sub : null)
+        : (state.locked === 'plast' ? panelState.sub : null);
       // столбы ранжирования выходят вместе со слоем оценки
       if(z.столбы){
         const вид = (aSub === 2 && !state.openId) ? 1 : 0;   // столбы ранжирования без подписей (см. обновитьМеткиТЭО) в миниатюре — просто палки
