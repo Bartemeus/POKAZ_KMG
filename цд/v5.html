@@ -422,6 +422,23 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #pc-claim{font-size:23px;color:var(--dim);line-height:1.6;max-width:52ch}
 #pc-video{display:none;width:100%;max-height:62vh;object-fit:contain;background:#02040A;
   border:1px solid var(--line);border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 18px 46px rgba(0,0,0,.32)}
+#pc-carousel{display:none;position:relative;width:100%;aspect-ratio:2046 / 1100;max-height:62vh;
+  overflow:hidden;background:#02040A;border:1px solid var(--line);
+  border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 18px 46px rgba(0,0,0,.32)}
+#pc-carousel img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  opacity:0;transform:translateX(18px) scale(1.025);transition:opacity .7s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+#pc-carousel img.active{opacity:1;transform:translateX(0) scale(1)}
+#pc-carousel button{position:absolute;top:50%;z-index:1;transform:translateY(-50%);
+  width:44px;height:56px;border:1px solid var(--line);background:rgba(5,10,20,.76);
+  color:var(--txt);font-size:28px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+#pc-carousel button:hover,#pc-carousel button:focus-visible{background:rgba(10,30,45,.94);
+  color:var(--cyan);border-color:var(--cyan);outline:none}
+#pc-carousel button:disabled{opacity:.3;cursor:default}
+#pc-carousel button:disabled:hover{background:rgba(5,10,20,.76);color:var(--txt);border-color:var(--line)}
+#pc-carousel-prev{left:12px}#pc-carousel-next{right:12px}
+#pc-carousel-count{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  padding:5px 10px;background:rgba(5,10,20,.78);border:1px solid var(--line);
+  color:var(--txt);font:15px var(--mono);letter-spacing:.15em}
 #pc-system{display:none;width:100%;height:auto;aspect-ratio:2046 / 1100;max-height:62vh;flex-shrink:0;
   background:#f0f0f0;border:1px solid var(--line);border-top:2px solid var(--pc,#4FE3FF);
   box-shadow:0 18px 46px rgba(0,0,0,.32)}
@@ -435,16 +452,17 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
    H1 постоянно висит в левом верхнем углу и, если бы pc-name стартовал по
    умолчанию с 64px, они сталкивались бы в углу — теперь заголовок системы
    уезжает под H1 и не наезжает на него. */
-#project-content:is(.с-видео,.с-системой){padding-top:96px;padding-bottom:42px;gap:12px}
-#project-content:is(.с-видео,.с-системой) #pc-name{font-size:38px}
+#project-content:is(.с-видео,.с-системой,.с-карусель){padding-top:96px;padding-bottom:42px;gap:12px}
+#project-content:is(.с-видео,.с-системой,.с-карусель) #pc-name{font-size:38px}
 /* 24.09 (Адиль): убраны кнопка «← к цифровому двойнику» и жёлтый кикер
    «ЦД … · проект NN» на карточке системы. Возврат идёт единственной
    кнопкой в нижнем левом углу у миниатюры 3D (см. #mini-reset). Разметка
    и обработчик закрытия по #pc-back оставлены — при возврате вида можно
    просто снять эти два display:none и всё поедет обратно. */
-#project-content:is(.с-видео,.с-системой) :is(#pc-claim,#pc-badge,#pc-back,#pc-kick){display:none}
+#project-content:is(.с-видео,.с-системой,.с-карусель) :is(#pc-claim,#pc-badge,#pc-back,#pc-kick){display:none}
 #project-content.с-видео #pc-video{display:block}
 #project-content.с-системой #pc-system{display:block}
+#project-content.с-карусель #pc-carousel{display:block}
 /* Кнопка возврата к первому кадру. Стоит у 3D-модели в нижнем левом углу:
    миниатюра занимает `--mini-width × --мини-высота` от MINI_MARGIN, кнопка
    ложится сразу справа от миниатюры (23.09, Адиль — «возврат у 3D-модели»).
@@ -552,6 +570,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
   <div id="pc-name"></div>
   <div id="pc-claim"></div>
   <video id="pc-video" controls autoplay muted loop playsinline preload="auto"></video>
+  <div id="pc-carousel" role="region" aria-label="Кадры технико-экономической оценки">
+    <img src="нюмекс1.png" alt="Технико-экономическая оценка — кадр 1" class="active">
+    <img src="нюмекс4.png" alt="Технико-экономическая оценка — кадр 2">
+    <img src="нюмекс6.png" alt="Технико-экономическая оценка — кадр 3">
+    <button id="pc-carousel-prev" type="button" aria-label="Предыдущий кадр">‹</button>
+    <button id="pc-carousel-next" type="button" aria-label="Следующий кадр">›</button>
+    <span id="pc-carousel-count" aria-live="polite">1 / 3</span>
+  </div>
   <video id="pc-tumar" src="tumar.MP4" controls muted loop playsinline preload="auto"
     aria-label="TUMAR"></video>
   <iframe id="pc-system" title="NUMEX — Технико-экономическая оценка" allow="fullscreen"></iframe>
@@ -562,7 +588,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
      со страницей. TUMAR уже грузится своим видимым #pc-tumar. -->
 <div id="video-preloaders" aria-hidden="true">
   <video src="NUMEX_optimize_cut.mp4" preload="auto" muted playsinline></video>
-  <video src="numex_new_n.mp4" preload="auto" muted playsinline></video>
   <video src="drillspot_cut.mp4" preload="auto" muted playsinline></video>
   <video src="im.mp4" preload="auto" muted playsinline></video>
 </div>
@@ -1995,18 +2020,28 @@ const PROJECT_KICKERS = { plast:'ЦД пласта', skv:'ЦД скважины'
    первого кадра, а не именами файлов. Стратегия открывается как «Цифровой
    двойник пласта», наземка — как «Интеллектуальное месторождение»; ТЭО и
    скважина оставлены под прежними названиями. */
-/* 25.09 (Адиль): «сценарий поменялся — записи для слоёв стратегия
-   разработки и технико-экономическая оценка должны поменяться местами».
-   Файлы .mp4 переставлены между sub=1 (Стратегия) и sub=2 (ТЭО); title
-   оставлены прежними — это подписи, а не имена файлов. */
-const RESERVOIR_VIDEOS = {
+/* ТЭО показывает три расчётных кадра вместо видеозаписи. */
+const RESERVOIR_CONTENT = {
   1:{ file:'NUMEX_optimize_cut.mp4', title:'Цифровой двойник пласта' },
-  2:{ file:'numex_new_n.mp4', title:'Технико-экономическая оценка' }
+  2:{ images:true, title:'Технико-экономическая оценка' }
 };
 const ZONE_VIDEOS = {
   skv:{ file:'drillspot_cut.mp4', title:'Цифровой двойник скважины' },
   naz:{ file:'im.mp4', title:'Интеллектуальное месторождение' }
 };
+const teoImages = [...document.querySelectorAll('#pc-carousel img')];
+let teoImageIndex = 0;
+function showTeoImage(index){
+  teoImageIndex = Math.max(0, Math.min(teoImages.length - 1, index));
+  teoImages.forEach((img, i) => {
+    img.classList.toggle('active', i === teoImageIndex);
+    img.setAttribute('aria-hidden', i !== teoImageIndex);
+  });
+  document.getElementById('pc-carousel-count').textContent = `${teoImageIndex + 1} / ${teoImages.length}`;
+  document.getElementById('pc-carousel-prev').disabled = teoImageIndex === 0;
+  document.getElementById('pc-carousel-next').setAttribute('aria-label', teoImageIndex === teoImages.length - 1 ? 'Следующий слой' : 'Следующий кадр');
+}
+showTeoImage(0);
 let launchT1 = null;
 function launchProject(id, isSwitch = false){
   if(state.launching || state.closing) return;
@@ -2074,7 +2109,7 @@ function openProject(id){
   const populateContent = () => {
     const zd = ZONES[state.openId];
     const videoData = state.openId === 'plast'
-      ? RESERVOIR_VIDEOS[panelState.sub]
+      ? RESERVOIR_CONTENT[panelState.sub]
       : ZONE_VIDEOS[state.openId];
     const video = $('pc-video');
     const система = $('pc-system');
@@ -2086,6 +2121,8 @@ function openProject(id){
     pc.style.setProperty('--pc', zd.color);
     pc.classList.toggle('с-видео', Boolean(videoData?.file));
     pc.classList.toggle('с-системой', Boolean(videoData?.page));
+    pc.classList.toggle('с-карусель', Boolean(videoData?.images));
+    if(videoData?.images) showTeoImage(0);
     if(videoData?.page){
       if(система.getAttribute('src') !== videoData.page) система.setAttribute('src', videoData.page);
     } else if(система.hasAttribute('src')) система.removeAttribute('src');
@@ -2294,6 +2331,13 @@ addEventListener('keydown', e => { if(e.key === 'Escape'){
    родителю сообщением, как это делает этап тиражирования. */
 if (new URLSearchParams(location.search).get('в_рамке') === '1') addEventListener('keydown', e => {
   const c = e.code;
+  const teoOpen = state.openId === 'plast' && panelState.sub === 2;
+  if(teoOpen && (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' || c === 'Space' || c === 'PageDown') && teoImageIndex < teoImages.length - 1){
+    e.preventDefault(); showTeoImage(teoImageIndex + 1); return;
+  }
+  if(teoOpen && (c === 'ArrowLeft' || c === 'Backspace' || c === 'PageUp') && teoImageIndex > 0){
+    e.preventDefault(); showTeoImage(teoImageIndex - 1); return;
+  }
   if (c === 'ArrowRight' || c === 'Enter' || c === 'NumpadEnter' || c === 'Space' || c === 'PageDown'){ e.preventDefault(); parent.postMessage({ слайд:true, шаг:+1 }, '*'); }
   if (c === 'ArrowLeft' || c === 'Backspace' || c === 'PageUp'){ e.preventDefault(); parent.postMessage({ слайд:true, шаг:-1 }, '*'); }
 });
@@ -3599,9 +3643,10 @@ window.__dbg = { renderer, scene, camera, state, zones, refresh, world,
      4) кнопка «Первый актив» — карточка о В. Молдабеке;
      5) второй слой снизу — Стратегия разработки (пласт, шаг 1);
      6) третий слой снизу — ТЭО (пласт, шаг 2);
-     7) четвёртый слой снизу — ЦД скважины;
-     8) верхний слой — ЦД наземной инфраструктуры;
-     9) кнопка ↩ у мини-тортика — свернуть слой.
+     7–8) второй и третий кадры ТЭО;
+     9) четвёртый слой снизу — ЦД скважины;
+    10) верхний слой — ЦД наземной инфраструктуры;
+    11) кнопка ↩ у мини-тортика — свернуть слой.
    При `?в_рамке=1` (внешний слайдер уже прокидывает такты) не
    активируем, чтобы не удвоить нажатия. Кнопки-раскрывашки списка
    вызываем через .click() — иначе повторяли бы содержимое их
@@ -3634,21 +3679,55 @@ if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
       openProject('plast');   // isSwitch внутри — гасит контент и через 260 мс подставляет ТЭО
       await пауза(400);
     },
+    async () => { showTeoImage(1); await пауза(720); },
+    async () => { showTeoImage(2); await пауза(720); },
     async () => { switchProject('skv'); await пауза(MINI_TRANSITION_MS + 60); },
     async () => { switchProject('naz'); await пауза(MINI_TRANSITION_MS + 60); },
     async () => { closeProject(); },
   ];
   let текущий = 0, идёт = false;
-  addEventListener('keydown', async e => {
-    if(e.code !== 'Space' && e.code !== 'ArrowRight' && e.code !== 'Enter' && e.code !== 'NumpadEnter' && e.code !== 'PageDown') return;
-    const т = e.target;
-    if(т && (т.tagName === 'INPUT' || т.tagName === 'TEXTAREA' || т.isContentEditable)) return;
-    e.preventDefault();
+  const teoOpen = () => state.openId === 'plast' && panelState.sub === 2;
+  const syncTeoStep = () => { if(teoOpen()) текущий = 6 + teoImageIndex; };
+  async function вперёд(){
     if(идёт || текущий >= шаги.length) return;
     идёт = true;
     try { await шаги[текущий++](); }
     catch(err){ console.error('v5 шаг', текущий, err); }
     finally { идёт = false; }
+  }
+  addEventListener('keydown', async e => {
+    const назад = e.code === 'ArrowLeft' || e.code === 'PageUp';
+    if(!назад && e.code !== 'Space' && e.code !== 'ArrowRight' && e.code !== 'Enter' && e.code !== 'NumpadEnter' && e.code !== 'PageDown') return;
+    const т = e.target;
+    if(т && (т.tagName === 'INPUT' || т.tagName === 'TEXTAREA' || т.isContentEditable)) return;
+    e.preventDefault();
+    if(идёт || e.repeat) return;
+    if(назад){
+      if(teoOpen() && teoImageIndex > 0){ showTeoImage(teoImageIndex - 1); syncTeoStep(); }
+      return;
+    }
+    syncTeoStep();
+    await вперёд();
+  });
+  $('pc-carousel-prev').addEventListener('click', e => {
+    e.stopPropagation();
+    if(идёт || !teoOpen() || teoImageIndex === 0) return;
+    showTeoImage(teoImageIndex - 1); syncTeoStep();
+  });
+  $('pc-carousel-next').addEventListener('click', e => {
+    e.stopPropagation();
+    if(!teoOpen()) return;
+    syncTeoStep(); вперёд();
+  });
+} else {
+  $('pc-carousel-prev').addEventListener('click', e => {
+    e.stopPropagation();
+    if(teoImageIndex > 0) showTeoImage(teoImageIndex - 1);
+  });
+  $('pc-carousel-next').addEventListener('click', e => {
+    e.stopPropagation();
+    if(teoImageIndex < teoImages.length - 1) showTeoImage(teoImageIndex + 1);
+    else parent.postMessage({ слайд:true, шаг:+1 }, '*');
   });
 }
 </script>
