@@ -1,0 +1,25 @@
+.numex-page{width:100%;height:100%;overflow:auto;background:#f0f0f0;border:1px solid #a0a0a0;scrollbar-width:thin;scrollbar-color:#858585 #f0f0f0;padding:0 10px 0 0}
+.numex-page .numex-property-table{width:100%;border-collapse:collapse;table-layout:fixed;font:12px "Segoe UI",Arial,sans-serif}
+.numex-page .numex-label-column{width:59%}
+.numex-page .numex-property-table th{height:24px;padding:1px 3px;text-align:left;font-weight:400;border-right:1px solid #d1d1d1;border-bottom:1px solid #a0a0a0;background:#fff;position:sticky;top:0;z-index:2}
+.numex-page .numex-property-table td{height:22px;padding:0;border-right:1px solid #a0a0a0;border-bottom:1px solid #a0a0a0;overflow:hidden;white-space:nowrap;background:#fff}
+.numex-page .numex-property-table tr:nth-child(even) td{background:#f4f4f4}
+.numex-page .numex-property-table td:last-child{border-right:0}
+.numex-page .numex-property-table tr:focus-within td,.numex-page .numex-property-table tr.numex-selected-row td{background:#e2f0fc}
+.numex-page .numex-disabled-row>td:first-child label{color:#858585}
+.numex-page .numex-property-label{display:flex;align-items:center;min-width:0;height:21px;white-space:nowrap;overflow:hidden}
+.numex-page .numex-property-label label{display:flex;align-items:center;min-width:0;height:21px;overflow:hidden;cursor:default}
+.numex-page .numex-tree-toggle,.numex-page .numex-tree-spacer{width:16px;height:20px;flex:none}
+.numex-page .numex-tree-toggle{padding:0;border:0;background:transparent;display:flex;align-items:center;justify-content:flex-start}
+.numex-page .numex-tree-toggle:before{content:"";width:5px;height:5px;border-right:1.5px solid #333;border-bottom:1.5px solid #333;transform:translate(2px,-2px) rotate(45deg)}
+.numex-page .numex-tree-toggle[aria-expanded=false]:before{transform:translate(1px,0) rotate(-45deg)}
+.numex-page .numex-tree-toggle:disabled:before{border-color:#999}
+.numex-page input[type=checkbox],.numex-page input[type=radio]{margin:0 3px 0 0;width:13px;height:13px}
+.numex-page .numex-property-value{display:block;width:100%;height:21px;border:0;border-radius:0;padding:0 3px;font:12px "Segoe UI",Arial,sans-serif;background:transparent}
+.numex-page select.numex-property-value{appearance:none;padding-right:15px;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4 3 3 3-3' fill='none' stroke='%23777' stroke-width='.8'/%3E%3C/svg%3E") no-repeat right 2px center}
+.numex-page .numex-property-value:disabled{color:#858585}
+.numex-page .numex-property-action{width:100%;height:21px;padding:0;border:0;background:#ddd;box-shadow:inset 0 -1px #aaa}
+.numex-page .numex-property-action:disabled{color:#858585}
+.numex-page .numex-right-check{display:flex;align-items:center;height:21px;padding-left:3px;font-weight:400}
+.numex-page .numex-strong-row>.numex-property-label,.numex-page .numex-strong-row>td:first-child label{font-weight:600}
+.numex-page .numex-italic-row>td:first-child label{font-style:italic;font-weight:600}
