@@ -1092,6 +1092,7 @@ h2.заголовок{font-size:39px;font-weight:700;line-height:1.15;margin-top
 .выделено:not(.включён){opacity:0;transform:translateY(12px)}
 .фин svg.график .метка,.фин svg.график .плашка_ipo,.фин svg.график .плашка_текущ,.фин svg.график .плашка_текст,.фин svg.график .подпись_даты{opacity:0;transition:opacity .5s ease}
 .фин svg.график .показан{opacity:1}
+число.чис{display:inline-block;text-align:right;font:inherit;color:inherit}
 </style>
 <script>
 (function(){
@@ -1100,12 +1101,33 @@ h2.заголовок{font-size:39px;font-weight:700;line-height:1.15;margin-top
      при включении группы число отсчитывается от нуля за 1,4 с с замедлением к концу; формат (пробелы тысяч,
      запятая, знаки до и после) берётся из исходника, так что после отсчёта текст совпадает с ним буква в букву. */
   var ЧИСЛА = [].slice.call(document.querySelectorAll("#с1 .доля>b, #с1 .люди b, #с1 .столбец>b, #с1 .столбец em b, #с1 .разрез b, #сфин .выделено b"));
-  ЧИСЛА.forEach(function(э){ э.dataset.исх = э.firstChild.nodeValue; });
   function разбор(текст){
     var м = /^([^\d]*)(\d[\d\s\u00a0]*)(?:,(\d+))?(.*)$/.exec(текст); if(!м) return null;
     var целое = м[2].replace(/[\s\u00a0]/g, "");
-    return { до: м[1], после: м[4], дробь: м[3] ? м[3].length : 0, значение: parseFloat(целое + (м[3] ? "." + м[3] : "")), пробелы: /\d[\s\u00a0]\d/.test(м[2]) };
+    return { до: м[1], после: м[4], число: м[2] + (м[3] ? "," + м[3] : ""), дробь: м[3] ? м[3].length : 0,
+             значение: parseFloat(целое + (м[3] ? "." + м[3] : "")), пробелы: /\d[\s\u00a0]\d/.test(м[2]) };
   }
+  /* Число заворачивается в свой span фиксированной ширины (ширина итогового текста), цифры прижаты вправо:
+     без этого «трлн ₸», «тыс. человек» и подписи разреза ездили влево-вправо, пока число растёт с «0» до
+     «1 500» — Unbounded не моноширинный, и колонка grid/flex перекладывалась на каждом кадре. Ширина
+     меряется после загрузки шрифтов (до неё — запасной шрифт другой ширины). */
+  ЧИСЛА.forEach(function(э){
+    var ф = разбор(э.firstChild.nodeValue); if(!ф){ э.dataset.исх = ""; return; }
+    /* свой элемент, не span/i: под «.доля span», «.люди b i», «.столбец i» число попадало в чужие стили */
+    var с = document.createElement("число"); с.className = "чис"; с.textContent = ф.число;
+    э.insertBefore(document.createTextNode(ф.до), э.firstChild);
+    э.firstChild.nextSibling.nodeValue = ф.после;
+    э.insertBefore(с, э.firstChild.nextSibling);
+    э.dataset.исх = ф.число; э.чис = с;
+  });
+  /* меряется итоговый текст: к моменту fonts.ready счётчик уже идёт и в элементе стоит «0» —
+     ширина одной цифры, и подписи снова ездили (первая версия так и промахнулась) */
+  function зафиксировать(){ ЧИСЛА.forEach(function(э){ if(!э.чис) return; var было = э.чис.textContent;
+    э.чис.style.minWidth = "";
+    /* все цифры → «0»: «1» в Unbounded узкая, и промежуточные значения вроде «3 888» шире итоговых «1 674» —
+       коробка мерится по самому широкому написанию той же длины */
+    э.чис.textContent = э.dataset.исх.replace(/\d/g, "0"); э.чис.style.minWidth = э.чис.offsetWidth + "px"; э.чис.textContent = было; }); }
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(зафиксировать); else зафиксировать();
   function формат(ф, v){
     var s = v.toFixed(ф.дробь), ч = s.split("."), ц = ч[0];
     if(ф.пробелы || ц.length > 3) ц = ц.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -1113,22 +1135,30 @@ h2.заголовок{font-size:39px;font-weight:700;line-height:1.15;margin-top
   }
   var идут = {};
   function считать(э, задержка){
-    var ф = разбор(э.dataset.исх); if(!ф) return;
+    var ф = разбор(э.dataset.исх); if(!ф || !э.чис) return;
     var т0 = null, длит = 1400, ключ = ЧИСЛА.indexOf(э);
     if(идут[ключ]) cancelAnimationFrame(идут[ключ]);
-    э.firstChild.nodeValue = формат(ф, 0);
+    э.чис.textContent = формат(ф, 0);
     function шаг(t){
       if(т0 === null) т0 = t;
       var x = Math.min(1, (t - т0 - задержка) / длит);
       if(x < 0){ идут[ключ] = requestAnimationFrame(шаг); return; }
       var e = 1 - Math.pow(1 - x, 3);
-      э.firstChild.nodeValue = x >= 1 ? э.dataset.исх : формат(ф, ф.значение * e);
+      э.чис.textContent = x >= 1 ? э.dataset.исх : формат(ф, ф.значение * e);
       if(x < 1) идут[ключ] = requestAnimationFrame(шаг); else delete идут[ключ];
     }
     идут[ключ] = requestAnimationFrame(шаг);
   }
   function оживитьГруппу(г){
     var список = ЧИСЛА.filter(function(э){ return г.contains(э); });
+    if(г.classList.contains("столбец")){
+      /* столбцы — четыре отдельные группы одного такта: растут слева направо с шагом 0,15 с,
+         сумма над столбцом считается вместе с ростом, доля КМГ внутри — следом */
+      var k = [].indexOf.call(г.parentNode.children, г);
+      г.querySelector("i").style.transitionDelay = (k * 0.15) + "s";
+      список.forEach(function(э, i){ считать(э, k * 150 + i * 200); });
+      return;
+    }
     список.forEach(function(э, i){ считать(э, i * 110); });
     [].forEach.call(г.children, function(д, i){ д.style.transitionDelay = (i * 0.12) + "s"; });
   }
