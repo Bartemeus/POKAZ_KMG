@@ -10,21 +10,36 @@
       margin: 0;
       padding: 0;
     }
+    :root {
+      --numex-scale: 1;
+    }
     html, body {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background: #0f172a;
+      background: #ffffff;
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #numex-shell {
+      position: relative;
+      margin: auto;
+      overflow: hidden;
     }
 
     /* Автономное окно приложения на весь экран */
     #pc-numex {
+      position: absolute;
       display: flex !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      max-height: 100vh !important;
-      min-height: 100vh !important;
+      /* Fixed reference canvas, following NUMEX.html. Width-based fitting
+         gives 150% at 1792 px (2K presentation) and 80% at 956 px (laptop),
+         without leaving unused space in the wide presentation drawer. */
+      width: 1195px !important;
+      height: 717px !important;
+      max-height: 717px !important;
+      min-height: 717px !important;
+      transform: scale(var(--numex-scale));
+      transform-origin: top left;
       background: #ffffff;
       border-radius: 0 !important;
       box-shadow: none !important;
@@ -450,6 +465,7 @@
 </head>
 <body>
 
+  <div id="numex-shell">
   <div id="pc-numex" class="нумекс-окно">
     <!-- Верхняя шапка окна Windows (точно 1-в-1 из приложения) -->
     <div class="нумекс-шапка-windows">
@@ -704,11 +720,30 @@
       </div>
     </div>
   </div>
+  </div>
 
 
 <script>
 let нумексИнициализирован = false;
 let нумексОбсервер = null;
+
+/* Same fixed-canvas fitting used by NUMEX.html, but keyed to width because
+   the presentation drawer is much wider than the application's reference
+   aspect ratio. Browser zoom is still compensated: clientWidth changes in
+   the opposite direction. */
+const НУМЕКС_ШИРИНА = 1195;
+const НУМЕКС_ВЫСОТА = 717;
+
+function подогнатьРазмерНумекс(){
+  const масштаб = document.documentElement.clientWidth / НУМЕКС_ШИРИНА;
+  document.documentElement.style.setProperty('--numex-scale', String(масштаб));
+  const оболочка = document.getElementById('numex-shell');
+  оболочка.style.width = `${НУМЕКС_ШИРИНА * масштаб}px`;
+  оболочка.style.height = `${НУМЕКС_ВЫСОТА * масштаб}px`;
+}
+
+window.addEventListener('resize', подогнатьРазмерНумекс);
+подогнатьРазмерНумекс();
 
 // Полный массив точек оптимизации (180 точек, 1-в-1 из оригинального видео ПО)
 const НУМЕКС_ТОЧКИ = [
