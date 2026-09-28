@@ -246,9 +246,12 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
   background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));border:1px solid rgba(140,170,210,.16);
   opacity:0;transition:opacity .5s,transform .6s cubic-bezier(.22,.61,.36,1);pointer-events:none}
 #справка.on{opacity:1;transform:translateY(-50%);pointer-events:auto}
-#справка .hd{font-family:var(--mono);font-size:16.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
-#справка .nm{font-family:var(--serif);font-size:25px;color:#F2F7FF;line-height:1.15;border-top:2px solid var(--cyan);padding-top:12px}
-#справка .sub{font-size:17px;color:#9DB4CE;margin-top:6px;line-height:1.35}
+/* 28.09 (Адиль): «шрифты в карточке маловаты для большого экрана» —
+   поднимаем ключ, значение, шапку и подпись на ~2px. Ширину блока
+   не трогаем: max-width уже 560, дальше он полезет на сам пирог. */
+#справка .hd{font-family:var(--mono);font-size:18px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
+#справка .nm{font-family:var(--serif);font-size:28px;color:#F2F7FF;line-height:1.15;border-top:2px solid var(--cyan);padding-top:12px}
+#справка .sub{font-size:19px;color:#9DB4CE;margin-top:6px;line-height:1.35}
 #справка .ярус{margin-top:12px;padding-top:10px;border-top:1px solid rgba(140,170,210,.16);opacity:0;transform:translateY(10px);
   transition:opacity .5s cubic-bezier(.22,.61,.36,1),transform .5s cubic-bezier(.22,.61,.36,1)}
 #справка .ярус.on{opacity:1;transform:none}
@@ -256,19 +259,19 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #справка .rw{display:flex;gap:12px;padding:5px 0;border-bottom:1px solid rgba(140,170,210,.09);opacity:0;transform:translateY(10px);transition:opacity .4s ease-out,transform .4s ease-out}
 #справка .ярус.on .rw{opacity:1;transform:none}
 #справка .rw:last-child{border-bottom:0}
-#справка .rw .k{font-family:var(--mono);font-size:14.5px;letter-spacing:.08em;text-transform:uppercase;color:#7C8DA6;flex:0 0 40%;line-height:1.35}
-#справка .rw .v{font-size:17px;color:#DCE7F5;line-height:1.35}
+#справка .rw .k{font-family:var(--mono);font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:#7C8DA6;flex:0 0 40%;line-height:1.35}
+#справка .rw .v{font-size:19px;color:#DCE7F5;line-height:1.35}
 /* 25.09 (Адиль, замечание): КИН и МРП стояли особняком с бирюзовой рамкой и
    serif-цифрой — рядом с остальными строками смотрелись как «отдельная секция»,
    хотя это те же данные пилота. Возвращаем их в общий регистр: тот же mono ключ,
    та же подпись справа. Класс «эффект» с данных снят, стили ниже больше не
    применяются, но оставляем как ноль-специфик — если снова понадобится подсветить. */
 #справка .rw.эффект{padding:5px 0;border-left:0;background:none;margin-left:0}
-#справка .rw.эффект .k{font-family:var(--mono);font-size:14.5px;letter-spacing:.08em;
+#справка .rw.эффект .k{font-family:var(--mono);font-size:16px;letter-spacing:.08em;
   text-transform:uppercase;color:#7C8DA6;font-weight:400;line-height:1.35}
-#справка .rw.эффект .v{font-size:17px;color:#DCE7F5;align-self:auto;line-height:1.35}
-#справка .гр{padding:0 0 6px;font-family:var(--mono);font-size:14px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan)}
-#справка .src{margin-top:10px;font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:#5E7089}
+#справка .rw.эффект .v{font-size:19px;color:#DCE7F5;align-self:auto;line-height:1.35}
+#справка .гр{padding:0 0 6px;font-family:var(--mono);font-size:15.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan)}
+#справка .src{margin-top:10px;font-family:var(--mono);font-size:15.5px;letter-spacing:.08em;color:#5E7089}
 /* 28.09 (Адиль): в финальном кадре карточка «Первый актив» справа заменяется
    на блок «ТОП-12 месторождений» (данные из подводки demo_with_map.html).
    Позиционируется той же плашкой справа-по-центру, что и #справка, — чтобы
@@ -278,14 +281,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
   background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));border:1px solid rgba(140,170,210,.16);
   opacity:0;transition:opacity .5s,transform .6s cubic-bezier(.22,.61,.36,1);pointer-events:none}
 #топ12.on{opacity:1;transform:translateY(-50%);pointer-events:auto}
-#топ12 .kicker{font-family:var(--mono);font-size:16.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
-#топ12 h3{font-family:var(--serif);font-size:32px;font-weight:600;line-height:1.15;color:#F2F7FF;margin:0}
-#топ12 .lead{font-size:17px;color:#9DB4CE;margin-top:8px;padding-bottom:14px;border-bottom:1px solid rgba(140,170,210,.16)}
+/* 28.09 (Адиль): «шрифты в ТОП-12 маловаты» — те же ~2px на все
+   уровни, ширина без изменения. */
+#топ12 .kicker{font-family:var(--mono);font-size:18px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+#топ12 h3{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1.15;color:#F2F7FF;margin:0}
+#топ12 .lead{font-size:19px;color:#9DB4CE;margin-top:8px;padding-bottom:14px;border-bottom:1px solid rgba(140,170,210,.16)}
 #топ12 .lead b{color:var(--cyan);font-weight:700}
 #топ12 .обл{margin-top:14px}
-#топ12 .обл .нм{font-family:var(--mono);font-size:14.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:4px}
-#топ12 .обл .комп{font-size:14.5px;color:#7C8DA6;line-height:1.4;margin-bottom:6px}
-#топ12 .обл .мест{font-size:16px;color:#DCE7F5;line-height:1.5;padding:8px 12px;border-left:2px solid rgba(79,227,255,.35);background:rgba(79,227,255,.04);border-radius:0 8px 8px 0}
+#топ12 .обл .нм{font-family:var(--mono);font-size:16px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:4px}
+#топ12 .обл .комп{font-size:15.5px;color:#7C8DA6;line-height:1.4;margin-bottom:6px}
+#топ12 .обл .мест{font-size:18px;color:#DCE7F5;line-height:1.5;padding:8px 12px;border-left:2px solid rgba(79,227,255,.35);background:rgba(79,227,255,.04);border-radius:0 8px 8px 0}
 /* ко второй части показа — скрыта по решению от 14.08; вернуть: убрать display:none */
 #next{display:none;left:26px;bottom:22px}
 /* 25.09: кнопка возвращена — справа-сверху, чтобы не спорить с блоком
@@ -295,7 +300,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 /* 25.09: подсветка ключевых цифр в паспорте актива (36,7 % и 14,8 млн тонн)
    — заказчик просил «как-то выделить». Тот же циан, что у главных эффектов
    и линии процесса, чтобы не изобретать своего цвета. */
-#справка .rw.акцент .v{color:var(--cyan);font-family:var(--mono);font-weight:700;font-size:19px;
+#справка .rw.акцент .v{color:var(--cyan);font-family:var(--mono);font-weight:700;font-size:21px;
   /* 25.09 (Адиль, «добавь эффект/анимацию, чтоб цифры подсвечивались при
      рассказе»): мягкий пульс свечения — глаз ловит цифру, но она не мигает
      резко и не отвлекает во время речи. Останавливаем анимацию при
