@@ -3050,18 +3050,24 @@ function animate(){
            (как две верхних плиты «Скважина» и «Наземка»), не только при клике
            на пласт. Базовая раздвижка +/-14 применяется независимо от
            plastActive. При активном пласте — сильнее (умножается на 1.6),
-           плюс масштаб выбранного шага крупнее (1.32) и заметно выделен. */
+           плюс масштаб выбранного шага крупнее (1.32) и заметно выделен.
+           28.09 (правка): в мини-режиме (state.openId) множители уменьшены —
+           большая раздвижка выводила верхний подслой (ТЭО) выше границы
+           плиты пласта, и он вплотную наезжал на плиту скважины сверху.
+           Плюс уменьшен «extra» соседей при выборе шага. */
         const БАЗА = 14;
-        const множ = plastActive ? 1.6 : 1;
+        const isMini = !!state.openId;
+        const множ = plastActive ? (isMini ? 0.9 : 1.6) : 1;
+        const extraShift = isMini ? 18 : 40;
         let tOff = (si === 0 ? -БАЗА : si === 2 ? БАЗА : 0) * множ;
         if(plastActive && aSub !== null && si !== aSub){
-          tOff = tOff + (si < aSub ? -1 : 1) * 40 * Math.abs(si - aSub);
+          tOff = tOff + (si < aSub ? -1 : 1) * extraShift * Math.abs(si - aSub);
         }
         s.off += (tOff - s.off)*k;
         /* Любая наведённая составляющая, включая ТЭО, становится крупнее соседних. */
         const tScale = !plastActive
           ? 1.06
-          : aSub === null ? 1.14 : (aSub === si ? 1.32 : 0.94);
+          : aSub === null ? 1.14 : (aSub === si ? (isMini ? 1.18 : 1.32) : 0.94);
         s.scl = (s.scl === undefined) ? 1 : s.scl + (tScale - s.scl)*k;
         const cy = (s.st + s.sb)/2;
         s.wrap.scale.set(s.scl, s.scl, s.scl);
