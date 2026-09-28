@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>КМГ · ролики цифровой цепочки — второй экран</title>
+<style>
+/* Второй экран после презентации (Адиль 28.09): тринадцать роликов показа идут сами по кругу,
+   в порядке от геологии к маркетингу; звук выключен, голос дикторов — субтитрами (экран без
+   колонок). Ролики те же файлы, что в цепочке, — медиа/ролики; субтитры — медиа/субтитры/*.vtt
+   (faster-whisper по дорожке ролика, ИСХОДНИКИ/субтитры_из_роликов.py). AIAN — не mp4, а
+   поток аиан/показ.html?версия=kioge: идёт в рамке, запускается и читается отсюда (тот же
+   origin), реплики Jasper — субтитрами по тактам.
+   Управление: ?с=N — начать с N-го; → / ← — следующий/предыдущий; пробел — пауза;
+   ?звук=1 — со звуком (тогда субтитры не нужны, но остаются). */
+@font-face{font-family:'Unbounded';font-weight:500 700;font-display:swap;src:url('медиа/шрифты/унб_700_cyrillic.woff2') format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Unbounded';font-weight:500 700;font-display:swap;src:url('медиа/шрифты/унб_700_latin.woff2') format('woff2');unicode-range:U+0000-00FF}
+@font-face{font-family:'Golos Text';font-weight:400 600;font-display:swap;src:url('медиа/шрифты/голос_400_cyrillic.woff2') format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Golos Text';font-weight:400 600;font-display:swap;src:url('медиа/шрифты/голос_400_latin.woff2') format('woff2');unicode-range:U+0000-00FF}
+:root{--кмг:#02AEF0;--циан:#4FE3FF;--мята:#3EE6B8;--фон0:#050810;--грань:#1B2E48;--текст:#D7E2F2;--текст2:#AFC0D8;--приглуш:#7C8DA6}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#000;color:var(--текст);overflow:hidden;font-family:'Golos Text',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#сцена{position:fixed;inset:0;background:var(--фон0)}
+video,iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;object-fit:contain;opacity:0;transition:opacity .6s ease}
+video.виден,iframe.виден{opacity:1}
+/* заголовок ролика — как плашки в самих роликах: тёмная подложка, полоса цвета платформы */
+.титул{position:absolute;left:4.2vw;top:4.4vh;display:flex;flex-direction:column;gap:.35vh;padding:1.4vh 1.6vw 1.5vh 1.5vw;border-radius:1.1vh;
+  background:rgba(5,8,16,.78);border-left:.35vw solid var(--кмг);opacity:0;transform:translateY(-8px);transition:opacity .5s ease,transform .5s ease;max-width:56vw}
+.титул.виден{opacity:1;transform:none}
+.титул small{font-family:'Unbounded',sans-serif;font-size:1.3vh;letter-spacing:.24em;text-transform:uppercase;color:var(--циан)}
+.титул b{font-family:'Unbounded',sans-serif;font-size:2.6vh;line-height:1.2;font-weight:700;color:#fff}
+.титул span{font-size:1.75vh;color:var(--текст2)}
+/* субтитры — по центру снизу, крупно; текст дикторов из VTT */
+.субтитры{position:absolute;left:50%;bottom:8.5vh;transform:translateX(-50%);max-width:74vw;padding:1.3vh 1.8vw;border-radius:1vh;
+  background:rgba(5,8,16,.82);font-size:3.1vh;line-height:1.35;font-weight:600;color:#F2F7FF;text-align:center;text-wrap:balance;
+  opacity:0;transition:opacity .25s ease;pointer-events:none}
+.субтитры.виден{opacity:1}
+/* низ: логотип, ход по роликам, счётчик */
+.низ{position:absolute;left:4.2vw;right:4.2vw;bottom:2.4vh;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+#лого{height:6.4vh;filter:brightness(0) invert(1);opacity:.85}
+.точки{display:flex;gap:1vh}
+.точки i{width:1.1vh;height:1.1vh;border-radius:50%;background:var(--грань);transition:background .25s,transform .25s}
+.точки i.тек{background:var(--кмг);transform:scale(1.35);box-shadow:0 0 12px rgba(2,174,240,.6)}
+.точки i.был{background:rgba(2,174,240,.45)}
+.счётчик{font-family:'Unbounded',sans-serif;font-size:1.7vh;letter-spacing:.14em;color:var(--приглуш)}
+/* полоса времени ролика — тонкая, под низом */
+.ход{position:absolute;left:0;right:0;bottom:0;height:.45vh;background:rgba(27,46,72,.5)}
+.ход i{display:block;height:100%;width:0;background:var(--кмг);transition:width .3s linear}
+.пауза{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-size:2.2vh;letter-spacing:.2em;text-transform:uppercase;
+  padding:1.4vh 2.4vw;border-radius:1vh;border:1px solid rgba(2,174,240,.6);background:rgba(5,8,16,.8);color:var(--циан);display:none}
+body.пауза .пауза{display:block}
+</style>
+</head>
+<body>
+<div id="сцена">
+  <video id="видео" playsinline preload="auto" muted autoplay></video>
+  <iframe id="рамка" title="AIAN"></iframe>
+  <div class="титул" id="титул"><small id="т_бровь">—</small><b id="т_имя">—</b><span id="т_суть"></span></div>
+  <div class="субтитры" id="субтитры"></div>
+  <div class="пауза">Пауза</div>
+  <div class="низ">
+    <img id="лого" src="медиа/лого_кмг.png" alt="КазМунайГаз">
+    <div class="точки" id="точки"></div>
+    <div class="счётчик" id="счётчик"></div>
+  </div>
+  <div class="ход"><i id="ход"></i></div>
+</div>
+<script>
+(function(){
+  "use strict";
+  /* Порядок — список Адиля 28.09, тринадцать позиций. «суть» — вторая строка титула, чтобы
+     зритель второго экрана понимал, что смотрит; имена — как в цепочке. */
+  var ПЛЕЙЛИСТ = [
+    { бровь:"Геологоразведка · ИИ", имя:"KMG Geo AI", суть:"ИИ-ассистент геолога: оценка участков и рисков, поиск аналогов", видео:"медиа/ролики/kmg_geo_ai.mp4", субтитры:"медиа/субтитры/kmg_geo_ai.vtt" },
+    { бровь:"Добыча · ABAI", имя:"Подбор точек для бурения", суть:"Цифровой рейтинг новых скважин", видео:"медиа/ролики/abai_црнс.mp4", субтитры:"медиа/субтитры/abai_црнс.vtt" },
+    { бровь:"Добыча · ABAI", имя:"Управление геолого-техническими мероприятиями", суть:"Подбор и анализ эффективности ГТМ", видео:"медиа/ролики/abai_гтм.mp4", субтитры:"медиа/субтитры/abai_гтм.vtt" },
+    { бровь:"Добыча · ABAI", имя:"Управление заводнением", суть:"Мониторинг закачки и факторный анализ", видео:"медиа/ролики/abai_заводнение.mp4", субтитры:"медиа/субтитры/abai_заводнение.vtt" },
+    { бровь:"Добыча · ABAI", имя:"Формирование технологического режима", суть:"Интеллектуальное управление месторождением", видео:"медиа/ролики/abai_общий.mp4", субтитры:"медиа/субтитры/abai_общий.vtt" },
+    { бровь:"Добыча · ИИ", имя:"Управление транспортным обеспечением", суть:"Заявки, диспетчеризация и онлайн-мониторинг спецтехники", видео:"медиа/ролики/уто.mp4", субтитры:"медиа/субтитры/уто.vtt" },
+    { бровь:"Добыча · TUMAR", имя:"Обеспечение промышленной безопасности", суть:"Компьютерное зрение на бригадах ремонта скважин", видео:"медиа/ролики/тумар.mp4", субтитры:"медиа/субтитры/тумар.vtt" },
+    { бровь:"Добыча · ЭНД", имя:"Управление нарядами-допусками", суть:"Электронный наряд-допуск: от заявки до закрытия работ", видео:"медиа/ролики/наряд_допуск.mp4", субтитры:"медиа/субтитры/наряд_допуск.vtt" },
+    { бровь:"Закупки · KMG AISAP", имя:"Закупка и снабжение", суть:"Семь шагов закупки в одной платформе с ИИ", видео:"медиа/ролики/закупки.mp4", субтитры:"медиа/субтитры/закупки.vtt" },
+    { бровь:"Переработка", имя:"Цифровой НПЗ — сквозной процесс переработки", суть:"План → приём → переработка → резервуары → отгрузка → баланс", видео:"медиа/ролики/переработка.mp4", субтитры:"медиа/субтитры/переработка.vtt" },
+    { бровь:"Переработка · ИИ", имя:"Контроль промышленной безопасности и охраны труда на НПЗ", суть:"Компьютерное зрение на камерах завода", видео:"медиа/ролики/Контроль промбез.mp4", субтитры:"медиа/субтитры/Контроль промбез.vtt" },
+    { бровь:"Переработка · ИИ", имя:"Обеспечение надёжности оборудования", суть:"Предиктивная аналитика динамического оборудования", видео:"медиа/ролики/Обеспечения надежности оборудования.mp4", субтитры:"медиа/субтитры/Обеспечения надежности оборудования.vtt" },
+    { бровь:"Маркетинг · KMG AIAN", имя:"KMG AIAN", суть:"Аналитика баланса нефтепродуктов по стране", рамка:"аиан/показ.html?версия=kioge&озвучка=нет", субтитры:"медиа/субтитры/aian_kioge.json", держать:170 }
+  ];
+  var П = new URLSearchParams(decodeURIComponent(location.search));
+  var видео = document.getElementById("видео"), рамка = document.getElementById("рамка"), титул = document.getElementById("титул"),
+      субт = document.getElementById("субтитры"), точки = document.getElementById("точки"), счёт = document.getElementById("счётчик"), ход = document.getElementById("ход");
+  var текущий = -1, кью = [], таймеры = [], опрос = null, рамкаТакт = -1, рамкаКью = null, рамкаСтарт = 0;
+  видео.muted = П.get("звук") !== "1";
+  ПЛЕЙЛИСТ.forEach(function(){ точки.appendChild(document.createElement("i")); });
+
+  function сброс(){ таймеры.forEach(clearTimeout); таймеры = []; if(опрос){ clearInterval(опрос); опрос = null; } кью = []; субт.classList.remove("виден"); }
+  function показатьТитул(р, i){
+    document.getElementById("т_бровь").textContent = ("0" + (i + 1)).slice(-2) + " / " + ПЛЕЙЛИСТ.length + " · " + р.бровь;
+    document.getElementById("т_имя").textContent = р.имя; document.getElementById("т_суть").textContent = р.суть || "";
+    титул.classList.remove("виден"); таймеры.push(setTimeout(function(){ титул.classList.add("виден"); }, 300));
+    [].forEach.call(точки.children, function(т, j){ т.className = j === i ? "тек" : j < i ? "был" : ""; });
+    счёт.textContent = ("0" + (i + 1)).slice(-2) + " / " + ("0" + ПЛЕЙЛИСТ.length).slice(-2);
+  }
+  /* VTT → массив реплик; парсер минимальный: наши файлы — из whisper, без стилей */
+  function разобратьVTT(т){
+    var из = [], б = т.replace(/\r/g, "").split("\n\n");
+    б.forEach(function(к){
+      var с = к.trim().split("\n"), м = null, i;
+      for(i = 0; i < с.length; i++){ м = /(\d+):(\d+):(\d+\.\d+)\s*-->\s*(\d+):(\d+):(\d+\.\d+)/.exec(с[i]); if(м) break; }
+      if(!м) return;
+      из.push({ от:+м[1] * 3600 + +м[2] * 60 + +м[3], до:+м[4] * 3600 + +м[5] * 60 + +м[6], текст:с.slice(i + 1).join(" ") });
+    });
+    return из;
+  }
+  function субтитрНа(т, список){
+    var р = null, i;
+    for(i = 0; i < список.length; i++) if(т >= список[i].от && т < список[i].до + 0.25){ р = список[i]; break; }
+    if(р){ if(субт.textContent !== р.текст) субт.textContent = р.текст; субт.classList.add("виден"); } else субт.classList.remove("виден");
+  }
+  function следующий(){ показать((текущий + 1) % ПЛЕЙЛИСТ.length); }
+  function показать(i){
+    сброс(); текущий = i; var р = ПЛЕЙЛИСТ[i];
+    показатьТитул(р, i); ход.style.width = "0";
+    if(р.видео){
+      рамка.classList.remove("виден"); рамка.removeAttribute("src");
+      видео.src = р.видео; видео.classList.add("виден");
+      пуск();
+      if(р.субтитры) fetch(р.субтитры).then(function(о){ return о.ok ? о.text() : ""; }).then(function(т){ кью = т ? разобратьVTT(т) : []; }).catch(function(){ кью = []; });
+    } else {
+      видео.pause(); видео.classList.remove("виден"); видео.removeAttribute("src"); видео.load();
+      рамка.src = р.рамка; рамка.classList.add("виден"); рамкаТакт = -1; рамкаКью = null; рамкаСтарт = Date.now();
+      if(р.субтитры) fetch(р.субтитры).then(function(о){ return о.ok ? о.json() : null; }).then(function(д){ рамкаКью = д; }).catch(function(){});
+      рамка.onload = function(){
+        /* тот же origin: запускаем поток вызовом вперёд() и следим за автоИдёт/номер; браузер
+           не даст звук без жеста, но звук здесь и не нужен */
+        var w = рамка.contentWindow, шёл = false, старт = Date.now();
+        таймеры.push(setTimeout(function(){ try{ w.вперёд(); }catch(e){} }, 900));
+        опрос = setInterval(function(){
+          var идёт = false, н = -1;
+          try{ идёт = !!w.eval("автоИдёт"); н = w.eval("номер"); }catch(e){}
+          if(идёт) шёл = true;
+          if(н !== рамкаТакт){ рамкаТакт = н; рамкаСтарт = Date.now(); }
+          /* субтитры: реплика такта из json, тайминги — секунды от входа в такт (как у mp3) */
+          if(рамкаКью){ var ключ = ["д1","д2","д3","д4","д5","д6"][н], список = (рамкаКью[ключ] || []).map(function(с){ return { от:с[0], до:с[1], текст:с[2] }; });
+            субтитрНа((Date.now() - рамкаСтарт) / 1000, список); }
+          ход.style.width = Math.min(100, (Date.now() - старт) / 10 / (р.держать || 170)) + "%";
+          if(шёл && !идёт){ clearInterval(опрос); опрос = null; таймеры.push(setTimeout(следующий, 4000)); }
+        }, 250);
+        таймеры.push(setTimeout(следующий, (р.держать || 170) * 1000));   /* страховка, если поток не отчитается */
+      };
+    }
+  }
+  /* автозапуск без звука браузеры разрешают; если всё же отказ (строгая политика) — просим
+     один клик, дальше плейлист идёт сам */
+  function пуск(){
+    var п = видео.play();
+    if(п && п.catch) п.catch(function(){ document.querySelector(".пауза").textContent = "Нажмите, чтобы начать"; document.body.classList.add("пауза"); });
+  }
+  видео.addEventListener("canplay", function(){ if(видео.paused && !document.body.classList.contains("пауза")) пуск(); });
+  видео.addEventListener("playing", function(){ document.body.classList.remove("пауза"); document.querySelector(".пауза").textContent = "Пауза"; });
+  видео.addEventListener("ended", следующий);
+  видео.addEventListener("error", function(){ таймеры.push(setTimeout(следующий, 1500)); });
+  видео.addEventListener("timeupdate", function(){
+    if(видео.duration) ход.style.width = (видео.currentTime / видео.duration * 100) + "%";
+    if(кью.length) субтитрНа(видео.currentTime, кью);
+  });
+  document.addEventListener("keydown", function(с){
+    if(с.key === "ArrowRight" || с.key === "PageDown"){ с.preventDefault(); следующий(); }
+    else if(с.key === "ArrowLeft" || с.key === "PageUp"){ с.preventDefault(); показать((текущий - 1 + ПЛЕЙЛИСТ.length) % ПЛЕЙЛИСТ.length); }
+    else if(с.key === " "){ с.preventDefault(); if(видео.paused){ видео.play(); document.body.classList.remove("пауза"); } else { видео.pause(); document.body.classList.add("пауза"); } }
+    else if(с.key === "f" || с.key === "F" || с.key === "а" || с.key === "А"){ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("click", function(){ if(document.body.classList.contains("пауза") && видео.paused){ пуск(); return; } следующий(); });
+  var н = +(П.get("с") || 1);
+  показать(Math.min(Math.max(н, 1), ПЛЕЙЛИСТ.length) - 1);
+  window.__ролики = { показать:показать, текущий:function(){ return текущий; } };
+})();
+</script>
+</body>
+</html>
