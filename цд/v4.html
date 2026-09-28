@@ -93,7 +93,19 @@
      25.09 (Adil): "Топ 12" and "Более 90 %" merged into one card — two halves
      of one idea, the programme's reach. Two ideas, two cards. -->
 <section id="key-effects" aria-label="Ключевые эффекты программы">
-  <div class="columns">
+  <div class="columns is-current" data-state="initial">
+    <div class="card">
+      <div class="rows">
+        <div class="row"><span class="value">Топ 12</span><span class="label">месторождений</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rows">
+        <div class="row"><span class="value">Более 90 %</span><span class="label">добычи</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="columns" data-state="final">
     <div class="card">
       <div class="rows">
         <div class="row"><span class="value">Топ 12</span><span class="label">месторождений</span></div>
@@ -102,8 +114,8 @@
     </div>
     <div class="card">
       <div class="rows">
-        <div class="row"><span class="value">2 864 тыс. тонн</span><span class="label">доп. добычи</span></div>
-        <div class="row"><span class="value">326 млрд ₸</span></div>
+        <div class="row"><span class="value">2 864 тыс. тонн</span><span class="label">дополнительной добычи</span></div>
+        <div class="row"><span class="value">326 млрд ₸ — 3–5 % от EBITDA</span></div>
       </div>
     </div>
   </div>
@@ -309,21 +321,22 @@
 
 
 <!-- ═══ First-asset card (East Moldabek) ═════════════════════════════════
-     Shown by default in the initial frame; folds while a layer is open.
+     Opens from the button in the upper-right corner; folds while a layer is open.
      Same data as the reference card in the lead-in finale (demo_with_map.html).
      21.09 (Adil): "first asset", not "pilot" — the pilot is finished.
      23.09 (Adil): "600 вариантов" — the number CRNS actually ran for this
      asset; "Внедрение · октябрь 2026" moved to the lead-in roadmap.
      25.09 (Adil): «Добыто» → «Извлечено» (the customer's term); КИН and МРП
      rows back in the common register instead of a highlighted section. -->
+<button id="asset-toggle" type="button"><span>Первый актив</span><span class="arrow">→</span></button>
 <div id="asset-card">
   <div class="kicker">Первый актив</div>
   <div class="name">м/р «Восточный Молдабек»</div>
   <div class="location">Атырауская область · АО «Эмбамунайгаз» · в разработке с 1999 года</div>
   <div class="tier passport">
     <div class="tier-heading">Справочная информация</div>
-    <div class="row"><div class="key">Остаточные извл. запасы</div><div class="value">14,8 млн тонн</div></div>
-    <div class="row"><div class="key">Извлечено</div><div class="value">36,7 %</div></div>
+    <div class="row accent"><div class="key">Остаточные извл. запасы</div><div class="value">14,8 млн тонн</div></div>
+    <div class="row accent"><div class="key">Извлечено</div><div class="value">36,7 %</div></div>
     <div class="row"><div class="key">Обводнённость</div><div class="value">88,8 %</div></div>
     <div class="row"><div class="key">Фонд добывающих</div><div class="value">360 скважин действующих</div></div>
     <div class="row"><div class="key">Фонд нагнетательных</div><div class="value">61 скважина действующая</div></div>
@@ -402,6 +415,8 @@
     <div class="content-kicker">ЦД скважины · проект 02</div>
     <div class="content-name">Цифровой двойник скважины</div>
     <iframe id="content-drillspot" data-src="drillspot/" title="DrillSpot — цифровой двойник скважины" allow="fullscreen"></iframe>
+    <video id="content-tumar" src="tumar.MP4" controls muted loop playsinline preload="auto"
+      aria-label="TUMAR"></video>
   </section>
   <section class="content-view content-view-app" data-zone="surface">
     <div class="content-kicker">ЦД наземки · проект 03</div>

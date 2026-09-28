@@ -5,6 +5,7 @@ import { state, selection } from '../state.js';
 
 const contentEl = document.getElementById('content');
 const videoEl = document.getElementById('content-video');
+const tumarVideoEl = document.getElementById('content-tumar');
 const views = [...contentEl.querySelectorAll('.content-view')];
 const SWAP_MS = 260;
 let swapTimer = null;
@@ -23,9 +24,16 @@ function fill(){
   for(const view of views) view.classList.toggle('is-current', view === current);
   contentEl.dataset.zone = zoneId;
   const isApp = current?.classList.contains('content-view-app') || false;
+  const showsTumar = current?.dataset.zone === 'well';
   contentEl.classList.toggle('is-app', isApp);
   contentEl.inert = false;
   videoEl.hidden = isApp;
+  if(showsTumar){
+    tumarVideoEl.currentTime = 0;
+    tumarVideoEl.play().catch(() => {});
+  } else {
+    tumarVideoEl.pause();
+  }
   for(const view of views){
     const iframe = view.querySelector('iframe');
     if(!iframe) continue;
@@ -66,6 +74,7 @@ export function showContent(isSwitch){
 export function hideContent(){
   clearTimeout(swapTimer);
   videoEl.pause();
+  tumarVideoEl.pause();
   for(const view of views){
     const iframe = view.querySelector('iframe');
     if(iframe) iframe.removeAttribute('src');

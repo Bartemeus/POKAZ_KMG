@@ -170,6 +170,14 @@
   gap: 0;
   overflow: hidden;
 }
+
+/* In the well view TUMAR occupies the same upper-right slot as in
+   первый_слайд_v3.html. Move the DrillSpot content below the
+   picture-in-picture instead of letting the two surfaces overlap. */
+#content.is-app[data-zone="well"] {
+  padding-top: calc(48px + min(9vw, 180px) + 24px);
+}
+
 #content.is-app .content-view-app.is-current {
   display: flex;
   flex: 1;
@@ -191,4 +199,21 @@
   border: 0;
   background: #080f14;
 }
+
+/* TUMAR stays visible alongside DrillSpot in the well layer, as it does in
+   the main slide: a compact safety feed above the embedded application. */
+#content-tumar {
+  position: absolute;
+  top: 48px;
+  right: 72px;
+  z-index: 2;
+  width: min(20vw, 400px);
+  aspect-ratio: 20 / 9;
+  object-fit: cover;
+  background: #02040a;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--color, #4fe3ff);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.38);
+}
+
 #content-video[hidden] { display: none; }

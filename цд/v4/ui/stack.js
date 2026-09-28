@@ -2,7 +2,7 @@
    binds them to the state and toggles is-hot / is-expanded / is-visible. */
 import { isGgdm } from '../data/zones.js';
 import { state, selection, activeZone, refresh } from '../state.js';
-import { openLayer, switchLayer } from '../transitions.js';
+import { switchLayer } from '../transitions.js';
 
 const stackEl = document.getElementById('stack');
 const items = [...stackEl.querySelectorAll('.stack-item')];
@@ -28,8 +28,12 @@ export function bindStack(){
       item.addEventListener('click', () => {
         if(state.closingZone) return;
         if(state.openZone){ switchLayer(zoneId); return; }
+        selection.zone = zoneId;
         selection.step = null;
-        openLayer(zoneId);
+        state.selectedZone = state.selectedZone === zoneId ? null : zoneId;
+        state.hoveredZone = null;
+        state.hoveredStep = null;
+        refresh();
       });
     } else {
       item.addEventListener('mouseenter', () => { state.hoveredZone = zoneId; state.hoveredStep = step; refresh(); });
@@ -40,7 +44,10 @@ export function bindStack(){
         if(state.openZone){ switchLayer(zoneId); return; }
         selection.zone = zoneId;
         selection.step = step;
-        openLayer(zoneId);
+        state.selectedZone = zoneId;
+        state.hoveredZone = null;
+        state.hoveredStep = null;
+        refresh();
       });
     }
   }

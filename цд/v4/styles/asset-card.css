@@ -1,9 +1,46 @@
-/* First-asset card on the right — shown by default in the initial frame.
+/* First-asset card on the right — opened from the button in the initial frame.
    Same layout as the card in the lead-in finale.
 
    24.09 (Adil, after release): the card was wider and larger than the key
    effects on top — the accent drifted to the asset. max-width 660 → 560,
    fonts slightly reduced. */
+#asset-toggle {
+  position: fixed;
+  z-index: 12;
+  right: 26px;
+  top: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 17px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  padding: 8px 13px;
+  background: rgba(10, 18, 32, 0.45);
+  backdrop-filter: blur(6px);
+  opacity: 0.42;
+  cursor: pointer;
+  transition: opacity 0.25s, color 0.25s, border-color 0.25s, background 0.25s;
+}
+
+#asset-toggle:hover,
+#asset-toggle:focus-visible,
+#asset-toggle.is-active {
+  opacity: 1;
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: rgba(79, 227, 255, 0.08);
+  outline: none;
+}
+
+#asset-toggle .arrow {
+  font-size: 19px;
+  line-height: 1;
+}
+
 #asset-card {
   position: fixed;
   right: 26px;
@@ -171,6 +208,31 @@
   font-size: 17px;
   color: #dce7f5;
   line-height: 1.35;
+}
+
+/* 25.09: the two figures requested by the customer softly glow while the
+   first-asset card is open. */
+#asset-card .row.accent .value {
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 19px;
+  padding: 0 6px;
+  border-radius: 6px;
+  animation: asset-number-pulse 2.4s ease-in-out infinite;
+}
+
+#asset-card .row.accent .key {
+  color: #b8cee8;
+}
+
+@keyframes asset-number-pulse {
+  0%, 100% { background: rgba(79, 227, 255, 0); text-shadow: 0 0 0 rgba(79, 227, 255, 0); }
+  50% { background: rgba(79, 227, 255, 0.14); text-shadow: 0 0 14px rgba(79, 227, 255, 0.65); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #asset-card .row.accent .value { animation: none; background: rgba(79, 227, 255, 0.12); }
 }
 
 #asset-card .footnote {

@@ -17,12 +17,17 @@
 }
 
 #key-effects .columns {
+  display: none;
+}
+
+#key-effects .columns.is-current {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
 #key-effects .card {
+  min-width: 0;
   padding: 13px 17px;
   background: var(--glass);
   border: 1px solid var(--line);
@@ -69,6 +74,14 @@
   color: var(--dim);
 }
 
+/* The final EBITDA line is deliberately one large statement in the source
+   slide. Let it wrap rather than widen the document on a narrow preview. */
+#key-effects [data-state="final"] .card:last-child .row:last-child .value {
+  min-width: 0;
+  white-space: normal;
+  font-size: clamp(22px, 1.9vw, 36px);
+}
+
 /* Docked — the same effects as one column above the stack while a layer is
    selected or open. ui/key-effects.js positions it. A bit larger than the
    stack items (21.5px) so the key effects are caught from the hall first. */
@@ -80,7 +93,7 @@
   top: auto;
 }
 
-#key-effects.is-docked .columns {
+#key-effects.is-docked .columns.is-current {
   grid-template-columns: 1fr;
   gap: 8px;
 }

@@ -19,7 +19,8 @@
 /* A layer is selected or open: the stack shrinks and moves up, key effects
    dock above it (see #key-effects.is-docked). */
 #stack.is-selected {
-  top: 46%;
+  top: 200px;
+  transform: none;
   gap: 4px;
 }
 

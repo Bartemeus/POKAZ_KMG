@@ -78,8 +78,8 @@ function slabSpread(layer){
    stack ended up under the panel or off-frame. Everything is measured from the
    window height because the model on screen scales with it too. */
 export const MINI = {
-  scale: 0.50,
-  heightRatio: 0.39,
+  scale: 0.42,
+  heightRatio: 0.56,
   aspect: 0.90,          // spot width to height
   margin: 34,            // from the window edge, px
   transitionMs: 900,     // flight into the corner and back

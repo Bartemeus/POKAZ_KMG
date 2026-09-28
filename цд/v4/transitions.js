@@ -15,8 +15,9 @@ import { controls } from './scene/core.js';
 import { layers } from './scene/build.js';
 import { startFlight, MINI } from './scene/layout.js';
 import { captureCamera, captureFraming } from './scene/camera-rig.js';
-import { showContent, hideContent } from './ui/content.js?v=drillspot-2';
+import { showContent, hideContent } from './ui/content.js?v=tumar-1';
 import { hideAssetCard, showAssetCard } from './ui/asset-card.js';
+import { showFinalKeyEffects } from './ui/key-effects.js';
 import { setPanelLayerOpen } from './ui/panel.js';
 
 const CLOSE_MS = MINI.transitionMs + 100;   // until idle (auto-rotation) returns
@@ -104,4 +105,5 @@ function finishClosing(){
   controls.enabled = true;
   refresh();
   showAssetCard();   // back in the initial frame: the first-asset card stands on the right again
+  showFinalKeyEffects();
 }
