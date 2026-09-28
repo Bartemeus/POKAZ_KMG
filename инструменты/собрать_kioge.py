@@ -23,6 +23,15 @@ a = т.index('/* Страница для геологов'); b = т.index('*/', 
    Каркас — цифры_кмг.html, карта — контуры областей и рельеф из AIAN. */''' + т[b:]
 
 # слайд 1 («Инвестиционная программа», всего крупно / доля КМГ) — в самой базе цифры_кмг.html (18.09)
+# 29.09 (Адиль): «первые два слайда прям статичные — пусть переход будет анимированным».
+# Блоки слайда 1 получают такты: доли и люди — такт 1 (карточки выезжают по очереди, цифры
+# отсчитываются от нуля), столбцы и разрез — такт 2 (столбцы растут, суммы отсчитываются).
+# Столбцы в базе стояли «включён» с разметки — снято, иначе на входе в слайд они не растут.
+т = т.replace('<div class="доли">', '<div class="доли" data-к="1">', 1)
+т = т.replace('<div class="люди">', '<div class="люди" data-к="1">', 1)
+т = т.replace('<div class="разрез">', '<div class="разрез" data-к="2">', 1)
+assert т.count('<div class="столбец включён" data-к="1">') == 4
+т = т.replace('<div class="столбец включён" data-к="1">', '<div class="столбец" data-к="2">')
 
 # ---- CSS карты ----
 css = '''
@@ -327,7 +336,7 @@ def график_финансов():
         </div>
         {график_финансов()}
       </div>
-      <div class="выделено"><b>$48,8 млрд</b><span>KASE: КМГ — компания с самой высокой рыночной капитализацией в РК</span></div>
+      <div class="выделено" data-к="1"><b>$48,8 млрд</b><span>KASE: КМГ — компания с самой высокой рыночной капитализацией в РК</span></div>
     </div>
   </div>
 </section>
@@ -978,5 +987,95 @@ b = т.index('</script>', a) + len('</script>')
   document.addEventListener("click", function(){ пауза = 2; });
 })();
 </script>''' + т[b:]
+ОЖИВЛЕНИЕ = '''
+<style>
+/* 29.09 (Адиль): первые два слайда «просто статично появлялись» — теперь входят по тактам:
+   карточки долей и люди выезжают снизу по очереди, цифры отсчитываются от нуля (скрипт ниже),
+   столбцы инвестпрограммы растут, разрез появляется строкой за строкой; на «Финансах» линия
+   цены рисуется от IPO до сегодня, потом появляется блок капитализации со счётчиком.
+   Слайды 3–6 не трогались — у них карта и так раскрывается по тактам. */
+.доля,.люди>div,.разрез>div{transition:opacity .55s ease,transform .55s ease}
+.доли:not(.включён) .доля,.люди:not(.включён)>div,.разрез:not(.включён)>div{opacity:0;transform:translateY(14px)}
+.столбец>b,.столбец span{transition:opacity .45s ease}
+.столбец:not(.включён)>b{opacity:0}
+.выделено{transition:opacity .6s ease,transform .6s ease}
+.выделено:not(.включён){opacity:0;transform:translateY(12px)}
+.фин svg.график .метка,.фин svg.график .плашка_ipo,.фин svg.график .плашка_текущ,.фин svg.график .плашка_текст,.фин svg.график .подпись_даты{opacity:0;transition:opacity .5s ease}
+.фин svg.график .показан{opacity:1}
+</style>
+<script>
+(function(){
+  "use strict";
+  /* Счётчики: у чисел первых двух слайдов запоминается исходный текст («26%», «1 500», «38,6», «$48,8 млрд»),
+     при включении группы число отсчитывается от нуля за 1,4 с с замедлением к концу; формат (пробелы тысяч,
+     запятая, знаки до и после) берётся из исходника, так что после отсчёта текст совпадает с ним буква в букву. */
+  var ЧИСЛА = [].slice.call(document.querySelectorAll("#с1 .доля>b, #с1 .люди b, #с1 .столбец>b, #с1 .столбец em b, #с1 .разрез b, #сфин .выделено b"));
+  ЧИСЛА.forEach(function(э){ э.dataset.исх = э.firstChild.nodeValue; });
+  function разбор(текст){
+    var м = /^([^\\d]*)(\\d[\\d\\s\\u00a0]*)(?:,(\\d+))?(.*)$/.exec(текст); if(!м) return null;
+    var целое = м[2].replace(/[\\s\\u00a0]/g, "");
+    return { до: м[1], после: м[4], дробь: м[3] ? м[3].length : 0, значение: parseFloat(целое + (м[3] ? "." + м[3] : "")), пробелы: /\\d[\\s\\u00a0]\\d/.test(м[2]) };
+  }
+  function формат(ф, v){
+    var s = v.toFixed(ф.дробь), ч = s.split("."), ц = ч[0];
+    if(ф.пробелы || ц.length > 3) ц = ц.replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ");
+    return ф.до + ц + (ф.дробь ? "," + ч[1] : "") + ф.после;
+  }
+  var идут = {};
+  function считать(э, задержка){
+    var ф = разбор(э.dataset.исх); if(!ф) return;
+    var т0 = null, длит = 1400, ключ = ЧИСЛА.indexOf(э);
+    if(идут[ключ]) cancelAnimationFrame(идут[ключ]);
+    э.firstChild.nodeValue = формат(ф, 0);
+    function шаг(t){
+      if(т0 === null) т0 = t;
+      var x = Math.min(1, (t - т0 - задержка) / длит);
+      if(x < 0){ идут[ключ] = requestAnimationFrame(шаг); return; }
+      var e = 1 - Math.pow(1 - x, 3);
+      э.firstChild.nodeValue = x >= 1 ? э.dataset.исх : формат(ф, ф.значение * e);
+      if(x < 1) идут[ключ] = requestAnimationFrame(шаг); else delete идут[ключ];
+    }
+    идут[ключ] = requestAnimationFrame(шаг);
+  }
+  function оживитьГруппу(г){
+    var список = ЧИСЛА.filter(function(э){ return г.contains(э); });
+    список.forEach(function(э, i){ считать(э, i * 110); });
+    [].forEach.call(г.children, function(д, i){ д.style.transitionDelay = (i * 0.12) + "s"; });
+  }
+  /* «Финансы»: линия цены рисуется от IPO к сегодняшней точке за 3 с (stroke-dashoffset), метка IPO
+     появляется в начале, текущая цена — когда линия дошла; подписи месяцев проявляются слева направо. */
+  function оживитьФинансы(с){
+    var svg = с.querySelector("svg.график"), путь = svg && svg.querySelector(".линия_цены"); if(!путь) return;
+    var L = путь.getTotalLength();
+    var метки = [].slice.call(svg.querySelectorAll(".метка")), тексты = [].slice.call(svg.querySelectorAll(".плашка_текст"));
+    var ipo = [метки[0], svg.querySelector(".плашка_ipo"), тексты[0]], тек = [метки[1], svg.querySelector(".плашка_текущ"), тексты[1]];
+    [].concat(ipo, тек).forEach(function(э){ if(э) э.classList.remove("показан"); });
+    var даты = [].slice.call(svg.querySelectorAll(".подпись_даты"));
+    даты.forEach(function(э){ э.classList.remove("показан"); });
+    путь.style.transition = "none"; путь.style.strokeDasharray = L; путь.style.strokeDashoffset = L;
+    void путь.getBoundingClientRect();
+    путь.style.transition = "stroke-dashoffset 3s cubic-bezier(.45,0,.2,1)"; путь.style.strokeDashoffset = 0;
+    даты.forEach(function(э, i){ э.style.transitionDelay = (i * 3 / даты.length) + "s"; э.classList.add("показан"); });
+    setTimeout(function(){ ipo.forEach(function(э){ if(э) э.classList.add("показан"); }); }, 250);
+    setTimeout(function(){ тек.forEach(function(э){ if(э) э.classList.add("показан"); }); }, 2900);
+  }
+  function оживитьСлайд(с){
+    if(с.id === "сфин") оживитьФинансы(с);
+    [].forEach.call(с.querySelectorAll("[data-к].включён"), оживитьГруппу);
+  }
+  /* Классы «виден» и «включён» ставит базовый скрипт (клики, стрелки, авто-такты) — ловим их наблюдателем,
+     чтобы не трогать его код. Первое включение при загрузке наблюдатель не видит — запускаем вручную. */
+  new MutationObserver(function(мм){
+    мм.forEach(function(м){
+      var э = м.target, был = м.oldValue || "";
+      if(э.classList.contains("слайд")){ if(э.classList.contains("виден") && !/\\bвиден\\b/.test(был)) оживитьСлайд(э); }
+      else if(э.hasAttribute("data-к")){ if(э.classList.contains("включён") && !/\\bвключён\\b/.test(был) && э.closest(".слайд.виден")) оживитьГруппу(э); }
+    });
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });
+  var первый = document.querySelector(".слайд.виден"); if(первый) оживитьСлайд(первый);
+})();
+</script>'''
+assert т.count('</body>') == 1
+т = т.replace('</body>', ОЖИВЛЕНИЕ + '\n</body>')
 io.open(R + 'экран_kioge.html', 'w', encoding='utf-8').write(т)
 print('ok', len(т))
