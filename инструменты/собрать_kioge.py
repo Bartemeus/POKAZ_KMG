@@ -989,89 +989,41 @@ b = т.index('</script>', a) + len('</script>')
 </script>''' + т[b:]
 ОЖИВЛЕНИЕ = '''
 <style>
-/* 29.09 (Адиль): первые два слайда «просто статично появлялись» — теперь входят по тактам:
-   карточки долей и люди выезжают снизу по очереди, цифры отсчитываются от нуля (скрипт ниже),
-   столбцы инвестпрограммы растут, разрез появляется строкой за строкой; на «Финансах» линия
-   цены рисуется от IPO до сегодня, потом появляется блок капитализации со счётчиком.
+/* 29.09 (Адиль): первые два слайда «просто статично появлялись» — теперь входят по тактам.
+   Первая версия отсчитывала цифры от нуля (счётчик); Адиль: «цифры дёрганые — это проблема»
+   (Unbounded не моноширинный, цифры мельтешат и прыгают по ширине даже в коробке фиксированной
+   ширины). Счётчик снят. Вместо него цифра «всплывает»: карточка выезжает снизу, число появляется
+   следом с лёгким увеличением (0,85 → 1) — движение одно, плавное, без мельтешения. На «Финансах»
+   линия цены рисуется от IPO до сегодня, потом выезжает блок капитализации.
    Слайды 3–6 не трогались — у них карта и так раскрывается по тактам. */
 .доля,.люди>div,.разрез>div{transition:opacity .55s ease,transform .55s ease}
 .доли:not(.включён) .доля,.люди:not(.включён)>div,.разрез:not(.включён)>div{opacity:0;transform:translateY(14px)}
-.столбец>b,.столбец span{transition:opacity .45s ease}
-.столбец:not(.включён)>b{opacity:0}
+.доля b,.люди b,.разрез b{transition:opacity .6s ease,transform .7s cubic-bezier(.2,.8,.2,1);transform-origin:left center}
+.доли:not(.включён) .доля b,.люди:not(.включён) b,.разрез:not(.включён) b{opacity:0;transform:scale(.85)}
+.столбец>b,.столбец span{transition:opacity .45s ease,transform .6s cubic-bezier(.2,.8,.2,1)}
+.столбец:not(.включён)>b{opacity:0;transform:translateY(8px)}
 .выделено{transition:opacity .6s ease,transform .6s ease}
 .выделено:not(.включён){opacity:0;transform:translateY(12px)}
 .фин svg.график .метка,.фин svg.график .плашка_ipo,.фин svg.график .плашка_текущ,.фин svg.график .плашка_текст,.фин svg.график .подпись_даты{opacity:0;transition:opacity .5s ease}
 .фин svg.график .показан{opacity:1}
-число.чис{display:inline-block;text-align:right;font:inherit;color:inherit}
 </style>
 <script>
 (function(){
   "use strict";
-  /* Счётчики: у чисел первых двух слайдов запоминается исходный текст («26%», «1 500», «38,6», «$48,8 млрд»),
-     при включении группы число отсчитывается от нуля за 1,4 с с замедлением к концу; формат (пробелы тысяч,
-     запятая, знаки до и после) берётся из исходника, так что после отсчёта текст совпадает с ним буква в букву. */
-  var ЧИСЛА = [].slice.call(document.querySelectorAll("#с1 .доля>b, #с1 .люди b, #с1 .столбец>b, #с1 .столбец em b, #с1 .разрез b, #сфин .выделено b"));
-  function разбор(текст){
-    var м = /^([^\\d]*)(\\d[\\d\\s\\u00a0]*)(?:,(\\d+))?(.*)$/.exec(текст); if(!м) return null;
-    var целое = м[2].replace(/[\\s\\u00a0]/g, "");
-    return { до: м[1], после: м[4], число: м[2] + (м[3] ? "," + м[3] : ""), дробь: м[3] ? м[3].length : 0,
-             значение: parseFloat(целое + (м[3] ? "." + м[3] : "")), пробелы: /\\d[\\s\\u00a0]\\d/.test(м[2]) };
-  }
-  /* Число заворачивается в свой span фиксированной ширины (ширина итогового текста), цифры прижаты вправо:
-     без этого «трлн ₸», «тыс. человек» и подписи разреза ездили влево-вправо, пока число растёт с «0» до
-     «1 500» — Unbounded не моноширинный, и колонка grid/flex перекладывалась на каждом кадре. Ширина
-     меряется после загрузки шрифтов (до неё — запасной шрифт другой ширины). */
-  ЧИСЛА.forEach(function(э){
-    var ф = разбор(э.firstChild.nodeValue); if(!ф){ э.dataset.исх = ""; return; }
-    /* свой элемент, не span/i: под «.доля span», «.люди b i», «.столбец i» число попадало в чужие стили */
-    var с = document.createElement("число"); с.className = "чис"; с.textContent = ф.число;
-    э.insertBefore(document.createTextNode(ф.до), э.firstChild);
-    э.firstChild.nextSibling.nodeValue = ф.после;
-    э.insertBefore(с, э.firstChild.nextSibling);
-    э.dataset.исх = ф.число; э.чис = с;
+  /* Задержки внутри группы: карточка i выезжает через i·0,12 с, её число — ещё через 0,15 с.
+     Столбцы — четыре группы одного такта: растут слева направо с шагом 0,15 с, сумма над
+     столбцом — когда столбец вырос. Задержки ставятся один раз при загрузке. */
+  ["#с1 .доли", "#с1 .люди", "#с1 .разрез"].forEach(function(сел){
+    var г = document.querySelector(сел); if(!г) return;
+    [].forEach.call(г.children, function(д, i){
+      д.style.transitionDelay = (i * 0.12) + "s";
+      [].forEach.call(д.querySelectorAll("b"), function(ч){ ч.style.transitionDelay = (i * 0.12 + 0.15) + "s"; });
+    });
   });
-  /* меряется итоговый текст: к моменту fonts.ready счётчик уже идёт и в элементе стоит «0» —
-     ширина одной цифры, и подписи снова ездили (первая версия так и промахнулась) */
-  function зафиксировать(){ ЧИСЛА.forEach(function(э){ if(!э.чис) return; var было = э.чис.textContent;
-    э.чис.style.minWidth = "";
-    /* все цифры → «0»: «1» в Unbounded узкая, и промежуточные значения вроде «3 888» шире итоговых «1 674» —
-       коробка мерится по самому широкому написанию той же длины */
-    э.чис.textContent = э.dataset.исх.replace(/\\d/g, "0"); э.чис.style.minWidth = э.чис.offsetWidth + "px"; э.чис.textContent = было; }); }
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(зафиксировать); else зафиксировать();
-  function формат(ф, v){
-    var s = v.toFixed(ф.дробь), ч = s.split("."), ц = ч[0];
-    if(ф.пробелы || ц.length > 3) ц = ц.replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ");
-    return ф.до + ц + (ф.дробь ? "," + ч[1] : "") + ф.после;
-  }
-  var идут = {};
-  function считать(э, задержка){
-    var ф = разбор(э.dataset.исх); if(!ф || !э.чис) return;
-    var т0 = null, длит = 1400, ключ = ЧИСЛА.indexOf(э);
-    if(идут[ключ]) cancelAnimationFrame(идут[ключ]);
-    э.чис.textContent = формат(ф, 0);
-    function шаг(t){
-      if(т0 === null) т0 = t;
-      var x = Math.min(1, (t - т0 - задержка) / длит);
-      if(x < 0){ идут[ключ] = requestAnimationFrame(шаг); return; }
-      var e = 1 - Math.pow(1 - x, 3);
-      э.чис.textContent = x >= 1 ? э.dataset.исх : формат(ф, ф.значение * e);
-      if(x < 1) идут[ключ] = requestAnimationFrame(шаг); else delete идут[ключ];
-    }
-    идут[ключ] = requestAnimationFrame(шаг);
-  }
-  function оживитьГруппу(г){
-    var список = ЧИСЛА.filter(function(э){ return г.contains(э); });
-    if(г.classList.contains("столбец")){
-      /* столбцы — четыре отдельные группы одного такта: растут слева направо с шагом 0,15 с,
-         сумма над столбцом считается вместе с ростом, доля КМГ внутри — следом */
-      var k = [].indexOf.call(г.parentNode.children, г);
-      г.querySelector("i").style.transitionDelay = (k * 0.15) + "s";
-      список.forEach(function(э, i){ считать(э, k * 150 + i * 200); });
-      return;
-    }
-    список.forEach(function(э, i){ считать(э, i * 110); });
-    [].forEach.call(г.children, function(д, i){ д.style.transitionDelay = (i * 0.12) + "s"; });
-  }
+  [].forEach.call(document.querySelectorAll("#с1 .столбец"), function(ст, k){
+    ст.querySelector("i").style.transitionDelay = (k * 0.15) + "s";
+    ст.querySelector("b").style.transitionDelay = (k * 0.15 + 0.45) + "s";
+  });
   /* «Финансы»: линия цены рисуется от IPO к сегодняшней точке за 3 с (stroke-dashoffset), метка IPO
      появляется в начале, текущая цена — когда линия дошла; подписи месяцев проявляются слева направо. */
   function оживитьФинансы(с){
@@ -1089,20 +1041,20 @@ b = т.index('</script>', a) + len('</script>')
     setTimeout(function(){ ipo.forEach(function(э){ if(э) э.classList.add("показан"); }); }, 250);
     setTimeout(function(){ тек.forEach(function(э){ if(э) э.classList.add("показан"); }); }, 2900);
   }
-  function оживитьСлайд(с){
-    if(с.id === "сфин") оживитьФинансы(с);
-    [].forEach.call(с.querySelectorAll("[data-к].включён"), оживитьГруппу);
-  }
-  /* Классы «виден» и «включён» ставит базовый скрипт (клики, стрелки, авто-такты) — ловим их наблюдателем,
-     чтобы не трогать его код. Первое включение при загрузке наблюдатель не видит — запускаем вручную. */
+  /* Класс «виден» ставит базовый скрипт (клики, стрелки, авто-такты) — ловим его наблюдателем, чтобы не
+     трогать базу. Когда слайд уходит, его кадры сбрасываются здесь же, пока он невидим: базовый скрипт
+     сбрасывает их только на входе, и карта маркетинга (курок отъезда — кадр 6) съезжалась обратно
+     к Казахстану уже на глазах у зрителя, 2,6 с — слайд начинался «за пределами РК» (Адиль 29.09). */
   new MutationObserver(function(мм){
     мм.forEach(function(м){
       var э = м.target, был = м.oldValue || "";
-      if(э.classList.contains("слайд")){ if(э.classList.contains("виден") && !/\\bвиден\\b/.test(был)) оживитьСлайд(э); }
-      else if(э.hasAttribute("data-к")){ if(э.classList.contains("включён") && !/\\bвключён\\b/.test(был) && э.closest(".слайд.виден")) оживитьГруппу(э); }
+      if(!э.classList.contains("слайд")) return;
+      var виден = э.classList.contains("виден"), былВиден = /\\bвиден\\b/.test(был);
+      if(виден && !былВиден && э.id === "сфин") оживитьФинансы(э);
+      if(!виден && былВиден) [].forEach.call(э.querySelectorAll("[data-к].включён"), function(к){ к.classList.remove("включён"); });
     });
   }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });
-  var первый = document.querySelector(".слайд.виден"); if(первый) оживитьСлайд(первый);
+  var первый = document.querySelector(".слайд.виден"); if(первый && первый.id === "сфин") оживитьФинансы(первый);
 })();
 </script>'''
 assert т.count('</body>') == 1
