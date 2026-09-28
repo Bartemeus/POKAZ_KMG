@@ -1049,7 +1049,8 @@ b = т.index('</script>', a) + len('</script>')
     мм.forEach(function(м){
       var э = м.target, был = м.oldValue || "";
       if(!э.classList.contains("слайд")) return;
-      var виден = э.classList.contains("виден"), былВиден = /\\bвиден\\b/.test(был);
+      /* не \bвиден\b: в JS \b — граница ASCII-слова, кириллицу не видит, и «был виден» никогда не срабатывал */
+      var виден = э.classList.contains("виден"), былВиден = /(^|\s)виден(\s|$)/.test(был);
       if(виден && !былВиден && э.id === "сфин") оживитьФинансы(э);
       if(!виден && былВиден) [].forEach.call(э.querySelectorAll("[data-к].включён"), function(к){ к.classList.remove("включён"); });
     });
