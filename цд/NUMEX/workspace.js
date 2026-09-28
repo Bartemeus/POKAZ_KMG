@@ -101,16 +101,19 @@
   window.addEventListener('numex:charts-change', () => window.NUMEXCore.report('Параметры графиков и сценариев изменены.'));
 
   function getState() {
-    return { page: activePage, forms: window.NUMEXPages.getState(), charts: window.NUMEXCharts.getState() };
+    return { page: activePage, forms: window.NUMEXPages.getState(), charts: window.NUMEXCharts.getState(), project: window.NUMEXProjects?.getState() };
   }
   function validateState(state) {
     if (!state || typeof state !== 'object' || Array.isArray(state)) throw new Error('Invalid workspace state.');
     if (!pageIds.includes(state.page)) throw new Error('Invalid workspace page.');
     window.NUMEXPages.validateState(state.forms);
     window.NUMEXCharts.validateState(state.charts);
+    if (state.project !== undefined) window.NUMEXProjects.validateState(state.project);
   }
   function setState(state) {
     validateState(state);
+    if (state.project !== undefined) window.NUMEXProjects.setState(state.project);
+    else if ([1, 2].includes(state.charts.results?.variant)) window.NUMEXProjects.setState({ activeId: state.charts.results.variant === 2 ? 'project2' : 'project', custom: null });
     window.NUMEXPages.setState(state.forms);
     window.NUMEXCharts.setState(state.charts);
     navigate(state.page, false);
@@ -118,6 +121,7 @@
   function resetState() {
     window.NUMEXPages.resetState();
     window.NUMEXCharts.resetState();
+    window.NUMEXProjects?.resetState();
     navigate('calculation', false);
   }
   window.NUMEXWorkspace = { navigate, getState, validateState, setState, resetState };

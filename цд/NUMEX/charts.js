@@ -4,10 +4,11 @@
   const panels = new Map();
   const initialState = {
     scenario: { parameters: ['23', '6::0p', '10::0p', '11::0p', '24'], rows: [[4, 1, 100, 0, 2.3], [10, 3, 250, 235, 2.5], [4, 1, 100, 0, 2], ['', '', '', '', ''], ['', '', '', '', '']], method: '3', count: 5, selectedType: '', selectedParameter: '23', selectedRow: 0, chartType: 'bar', metric: 'recovery', axisX: 'index', axisY: 'index', sort: 'index', descending: false, optimizer: 'Нелдера-Мида', objective: 'PI', placement: false },
-    results: { variant: 2, well: '', restart: true, timeUnit: 'days', forecast: 'forecast', economicTime: 'months', topCurves: { oilHistory: true, liquidHistory: true, injectionHistory: true, waterCutHistory: true, oil: true, liquid: true, gas: false, injection: true, gasInjection: false, waterCut: true }, bottomCurves: { npv: true, cashFlow: true, pi: true, irr: true } }
+    results: { variant: 2, well: '', restart: true, timeUnit: 'days', forecast: 'forecast', economicTime: 'months', topTab: 'rates', bottomTab: 'efficiency', topCurves: { oilHistory: true, liquidHistory: true, injectionHistory: true, waterCutHistory: true, oil: true, liquid: true, gas: false, injection: true, gasInjection: false, waterCut: true, pressure: true }, bottomCurves: { npv: true, cashFlow: true, pi: true, irr: true, capex: true, opex: true, tax: true, ndpi: true, prib: true, ndd: true, imush: true } }
   };
   const clone = value => JSON.parse(JSON.stringify(value));
   let state = clone(initialState);
+  let projectResults = null;
   const metrics = [ ['index', '№'], ['recovery', 'Кин'], ['npv', 'NPV, млн р'], ['pi', 'PI'], ['irr', 'IRR'], ['capex', 'CAPEX, млн р'], ['liquid', 'FLPT, тыс т'], ['oil', 'FOPT, тыс т'], ['gas', 'FGPT, млн м3'], ['injection', 'FWIT, тыс м3'], ['waterCut', 'Wc, мас'] ];
   const summaryRows = [
     { index: 1, recovery: .004, npv: -634.681, pi: -.077, irr: 0, capex: 595, liquid: 39.29, oil: 19.347, gas: .183, injection: 0, waterCut: .581 },
@@ -144,6 +145,7 @@
     const panel = element('section', { className: 'numex-charts-panel nc-split', 'aria-label': 'Серийные расчеты' });
     const side = element('div', { className: 'nc-side' }); const main = element('div', { className: 'nc-main' }); panel.append(side, main);
     const config = state.scenario;
+    const activeRows = projectResults ? [{ ...projectResults.summary, index: projectResults.variant }] : summaryRows;
     side.append(element('p', { className: 'nc-section-title', text: 'Создание сценария серийного расчета:' }));
     const typeList = element('div', { className: 'nc-list', role: 'listbox', 'aria-label': 'Типы параметров' });
     const attributeList = element('div', { className: 'nc-list', role: 'listbox', 'aria-label': 'Признаки параметров' });
@@ -178,9 +180,9 @@
     [['min', 'Мин'], ['max', 'Макс']].forEach(([value, text]) => { const input = element('input', { type: 'radio', name: 'nc-sort-direction', checked: config.descending === (value === 'max'), onchange: () => { config.descending = value === 'max'; drawTables(); drawGraphs(); notify(); } }); direction.append(element('label', {}, [input, text])); });
     side.append(element('div', { className: 'nc-option-row' }, ['Показатель,', select(metrics, config.sort, value => { config.sort = value; drawTables(); drawGraphs(); notify(); }, 'Сортировать варианты по'), direction]));
     const variants = element('div', { className: 'nc-table-wrap nc-scenario-variants' }); const summaries = element('div', { className: 'nc-table-wrap nc-scenario-summary' });
-    main.append(element('p', { className: 'nc-section-title', text: 'Таблица вариантов' }), variants, element('p', { className: 'nc-section-title' }, ['Расчетные показатели', element('span', { className: 'nc-reference-caption', text: 'данные из видео' })]), summaries);
+    main.append(element('p', { className: 'nc-section-title', text: 'Таблица вариантов' }), variants, element('p', { className: 'nc-section-title' }, ['Расчетные показатели', element('span', { className: 'nc-reference-caption', text: projectResults ? projectResults.label : 'данные из видео' })]), summaries);
     const graphs = chart(1200, 540, 'Сравнение вариантов и график взаимной зависимости'); main.append(graphs.toolbar, element('div', { className: 'nc-scenario-graphs' }, graphs.svg));
-    function sortedSummaries() { return summaryRows.slice().sort((a, b) => { const av = a[config.sort] ?? Infinity; const bv = b[config.sort] ?? Infinity; return (av - bv) * (config.descending ? -1 : 1); }); }
+    function sortedSummaries() { return activeRows.slice().sort((a, b) => { const av = a[config.sort] ?? Infinity; const bv = b[config.sort] ?? Infinity; return (av - bv) * (config.descending ? -1 : 1); }); }
     function drawTables() {
       variants.replaceChildren(table(['№', ...config.parameters], config.rows.map((row, index) => [index + 1, ...row]), { editable: true, selected: config.selectedRow, onSelect: index => { config.selectedRow = index; variants.querySelectorAll('tbody tr').forEach((row, rowIndex) => row.setAttribute('aria-selected', String(rowIndex === index))); notify(); }, onEdit: (row, column, value) => { config.rows[row][column] = value.trim() === '' ? '' : Number.isFinite(Number(value)) ? Number(value) : value; notify(); } }));
       summaries.replaceChildren(table(metrics.map(([, label]) => label), sortedSummaries().map(row => metrics.map(([key]) => row[key] ?? ''))));
@@ -191,10 +193,10 @@
       let markup = frame.markup; const points = [];
       sorted.forEach((row, index) => { const value = row[config.metric]; if (!Number.isFinite(value)) return; points.push([index + 1, value]); if (config.chartType === 'bar') { const baseline = frame.sy(0); const top = frame.sy(value); markup += `<rect x="${frame.sx(index + .62)}" y="${Math.min(top, baseline)}" width="${frame.sx(1.38) - frame.sx(.62)}" height="${Math.max(1, Math.abs(baseline - top))}" fill="#2777aa"/>`; } });
       if (config.chartType === 'line') markup += curve(points, frame, '#2777aa');
-      const xRange = range(summaryRows.map(row => row[config.axisX]).filter(Number.isFinite), false); const yRange = range(summaryRows.map(row => row[config.axisY]).filter(Number.isFinite), false);
+      const xRange = range(activeRows.map(row => row[config.axisX]).filter(Number.isFinite), false); const yRange = range(activeRows.map(row => row[config.axisY]).filter(Number.isFinite), false);
       const scatter = plotFrame({ x: 670, y: 32, width: 500, height: 435, xMin: xRange[0], xMax: xRange[1], yMin: yRange[0], yMax: yRange[1], xTicks: config.axisX === 'index' ? [1, 2, 3, 4, 5] : ticks(...xRange, 4), yTicks: config.axisY === 'index' ? [1, 2, 3, 4, 5] : ticks(...yRange, 4), xLabel: metrics.find(([key]) => key === config.axisX)?.[1], formatX: value => formatNumber(value, config.axisX), formatY: value => formatNumber(value, config.axisY) });
       markup += scatter.markup;
-      summaryRows.forEach(row => { if (!Number.isFinite(row[config.axisX]) || !Number.isFinite(row[config.axisY])) return; const x = scatter.sx(row[config.axisX]); const y = scatter.sy(row[config.axisY]); markup += `<circle cx="${x}" cy="${y}" r="5" fill="#2777aa"/>${textNode(row.index, x + 3, y - 3)}`; });
+      activeRows.forEach(row => { if (!Number.isFinite(row[config.axisX]) || !Number.isFinite(row[config.axisY])) return; const x = scatter.sx(row[config.axisX]); const y = scatter.sy(row[config.axisY]); markup += `<circle cx="${x}" cy="${y}" r="5" fill="#2777aa"/>${textNode(row.index, x + 3, y - 3)}`; });
       graphs.render(markup);
     }
     drawLists(); drawTables(); drawGraphs(); return panel;
@@ -266,7 +268,166 @@
     }
     drawLists(); drawTop(); drawBottom(); return panel;
   }
-  const creators = { initialization, reservoir: initialization, economics, scenarios, results };
+  function projectResultPanel() {
+    const source = projectResults;
+    const data = source.results;
+    const config = state.results;
+    const plannedWells = data.wells || [];
+    const panel = element('section', { className: 'numex-charts-panel nc-split', 'aria-label': 'Результаты и графики' });
+    const side = element('div', { className: 'nc-side' });
+    const main = element('div', { className: 'nc-main' });
+    panel.append(side, main);
+    side.append(element('div', { className: 'nc-directory-row' }, [element('strong', { text: 'Проект' }), button('Выбрать', () => window.dispatchEvent(new CustomEvent('numex:open-project')))]), element('input', { type: 'text', className: 'nc-directory', value: source.label, readOnly: true, 'aria-label': 'Проект расчета' }), element('p', { className: 'nc-section-title', text: 'Проектные скважины' }));
+    const wellList = element('div', { className: 'nc-list nc-wells', role: 'listbox', 'aria-label': 'Список проектных скважин' });
+    const variantList = element('div', { className: 'nc-list nc-variants', role: 'listbox', 'aria-label': 'Рассчитанные варианты' });
+    const current = element('p', { className: 'nc-current' });
+    const stats = element('div', { className: 'nc-stat-summary' });
+    side.append(wellList, element('p', { className: 'nc-section-title', text: 'Рассчитанные варианты' }), variantList, current, stats);
+    const top = element('div', { className: 'nc-results-top' });
+    const bottom = element('div', { className: 'nc-results-bottom' });
+    const topChart = chart(1200, 325, 'Результаты проекта: добыча и закачка');
+    const bottomChart = chart(1200, 345, 'Результаты проекта: экономика');
+    [topChart, bottomChart].forEach(graph => graph.svg.setAttribute('data-project-id', source.id));
+    const topTabs = element('div', { className: 'nc-tabs', role: 'tablist', 'aria-label': 'Графики добычи' });
+    const bottomTabs = element('div', { className: 'nc-tabs', role: 'tablist', 'aria-label': 'Графики экономики' });
+    const topLegend = element('div', { className: 'nc-legend' });
+    const bottomLegend = element('div', { className: 'nc-legend' });
+    const caption = element('span', { className: 'nc-result-caption', text: source.label });
+    top.append(topTabs, element('div', { className: 'nc-chart-holder' }, topChart.svg), topLegend);
+    bottom.append(bottomTabs, element('div', { className: 'nc-chart-holder' }, bottomChart.svg), bottomLegend);
+    const topControls = element('div', { className: 'nc-results-controls' }, [topChart.toolbar, select([['days', 'Сутки'], ['months', 'Месяцы'], ['years', 'Годы']], config.timeUnit, value => { config.timeUnit = value; drawTop(); notify(); }, 'Единица времени добычи'), select([['forecast', 'Прогноз']], 'forecast', () => {}, 'Интервал графика'), caption]);
+    const bottomControls = element('div', { className: 'nc-results-controls' }, [bottomChart.toolbar, select([['months', 'Месяцы'], ['years', 'Годы']], config.economicTime, value => { config.economicTime = value; drawBottom(); notify(); }, 'Единица времени экономики')]);
+    main.append(top, topControls, bottom, bottomControls);
+    const rateDefinitions = [ ['oil', 'Дебит нефти', '#a32232', 'м3/сут'], ['liquid', 'Дебит жидкости', '#168a12', 'м3/сут'], ['gas', 'Дебит газа', '#d840d9', 'тыс. м3/сут'], ['injection', 'Закачка воды', '#1515ff', 'м3/сут'], ['gasInjection', 'Закачка газа', '#432276', 'тыс. м3/сут'], ['waterCut', 'Обводненность', '#ef7d00', 'м3/м3', true] ];
+    const cumulativeDefinitions = [ ['oil', 'Накопленная нефть', '#a32232', 'м3'], ['liquid', 'Накопленная жидкость', '#168a12', 'м3'], ['gas', 'Накопленный газ', '#d840d9', 'тыс. м3'], ['injection', 'Накопленная закачка воды', '#1515ff', 'м3'], ['gasInjection', 'Накопленная закачка газа', '#432276', 'тыс. м3'] ];
+    const efficiencyDefinitions = [['npv', 'NPV', '#a32232', 'млн. руб'], ['cashFlow', 'CF', '#1515ff', 'млн. руб'], ['pi', 'PI', '#168a12', '', true], ['irr', 'IRR', '#00b7b7', '', true]];
+    const costDefinitions = [['capex', 'CAPEX', '#a32232', 'млн. руб'], ['opex', 'OPEX', '#1515ff', 'млн. руб']];
+    const taxDefinitions = [['tax', 'Налоги всего', '#a32232', 'млн. руб'], ['ndpi', 'НДПИ', '#1515ff', 'млн. руб'], ['prib', 'Налог на прибыль', '#168a12', 'млн. руб'], ['ndd', 'НДД', '#d840d9', 'млн. руб'], ['imush', 'Налог на имущество', '#ef7d00', 'млн. руб']];
+    const hasSeries = group => group && Object.values(group).some(values => Array.isArray(values) && values.some(Number.isFinite));
+    const selectedWell = () => plannedWells.find(well => well.name === config.well) || plannedWells[0];
+    const topOptions = [ ['rates', 'Доб/зак, мест-е', hasSeries(data.rates)], ['cumulative', 'Накоп-я доб/зак, мест-е', hasSeries(data.cumulative)], ['pressure', 'Среднепл-е давление', Array.isArray(data.pressure)], ['displacement', 'Хар-ка вытеснения', false], ['sdf', 'СДФ', false], ['wells', 'Доб/зак, скв.', plannedWells.length > 0] ];
+    const bottomOptions = [ ['efficiency', 'Показатели эффективности', hasSeries(data.economics)], ['costs', 'Затраты', hasSeries(data.economics?.costs)], ['taxes', 'Налоги', hasSeries(data.economics?.taxes)], ['bhp', 'BHP, Wc', plannedWells.some(well => Array.isArray(well.pressure))] ];
+    if (!topOptions.some(([key, , enabled]) => key === config.topTab && enabled)) config.topTab = 'rates';
+    if (!bottomOptions.some(([key, , enabled]) => key === config.bottomTab && enabled)) config.bottomTab = 'efficiency';
+    function drawTabs() {
+      const makeTabs = (container, options, property, redraw) => container.replaceChildren(...options.map(([key, label, enabled]) => button(label, () => { config[property] = key; drawTabs(); redraw(); notify(); }, { className: 'nc-tab', role: 'tab', 'aria-selected': String(config[property] === key), disabled: !enabled })));
+      makeTabs(topTabs, topOptions, 'topTab', drawTop);
+      makeTabs(bottomTabs, bottomOptions, 'bottomTab', drawBottom);
+    }
+    function drawLegend(container, definitions, values, choices, redraw) {
+      container.replaceChildren(...definitions.filter(([key]) => Array.isArray(values?.[key])).map(([key, label, color, unit]) => {
+        const input = element('input', { type: 'checkbox', checked: choices[key] !== false, 'aria-label': `${label}${unit ? ', ' + unit : ''}`, onchange: () => { choices[key] = input.checked; redraw(); notify(); } });
+        return element('label', {}, [input, element('span', { className: 'nc-swatch', style: `--curve-color:${color}` }), `${label}${unit ? ', ' + unit : ''}`]);
+      }));
+    }
+    function numericLabel(value) { return Number(value.toPrecision(4)).toLocaleString('ru-RU', { maximumFractionDigits: 4 }); }
+    function axisTicks(low, high, count = 6) {
+      const target = (high - low) / count;
+      const power = 10 ** Math.floor(Math.log10(target || 1));
+      const step = ([1, 2, 2.5, 5, 10].find(value => value >= target / power) || 10) * power;
+      const first = Math.ceil(low / step) * step;
+      return Array.from({ length: Math.max(1, Math.floor((high - first) / step + 1e-8) + 1) }, (_, index) => Number((first + index * step).toPrecision(10)));
+    }
+    function renderSeries(graph, time, values, definitions, choices, options) {
+      const visible = definitions.filter(([key]) => choices[key] !== false && Array.isArray(values?.[key]));
+      const primary = visible.filter(definition => !definition[4]);
+      const secondary = visible.filter(definition => definition[4]);
+      const primaryValues = primary.flatMap(([key]) => values[key]).filter(Number.isFinite);
+      const extent = range(primaryValues, options.includeZero !== false);
+      const secondaryValues = secondary.flatMap(([key]) => values[key]).filter(Number.isFinite);
+      const secondaryExtent = options.secondaryRange || range(secondaryValues, true);
+      const times = time.map(value => value / options.divisor);
+      const maxTime = Math.max(1, ...times);
+      const frame = plotFrame({ x: 82, y: 24, width: 1020, height: options.height || 235, xMin: -maxTime * .035, xMax: maxTime * 1.025, yMin: extent[0], yMax: extent[1], xTicks: axisTicks(0, maxTime, options.xTickCount || 6), yTicks: axisTicks(...extent), xLabel: options.timeLabel, yLabel: options.yLabel, dashed: true, formatX: numericLabel, formatY: numericLabel });
+      let markup = frame.markup;
+      if (secondary.length) {
+        axisTicks(...secondaryExtent).forEach(value => { markup += textNode(numericLabel(value), 1114, frame.y + frame.height * (1 - (value - secondaryExtent[0]) / (secondaryExtent[1] - secondaryExtent[0])) + 5); });
+        markup += `<text transform="translate(1180,145) rotate(-90)" text-anchor="middle" class="nc-chart-label">${escapeText(options.secondaryLabel)}</text>`;
+      }
+      visible.forEach(([key, , color, , isSecondary]) => {
+        const points = values[key].flatMap((value, index) => Number.isFinite(value) && Number.isFinite(times[index]) ? [[times[index], isSecondary ? extent[0] + (value - secondaryExtent[0]) / (secondaryExtent[1] - secondaryExtent[0]) * (extent[1] - extent[0]) : value]] : []);
+        markup += curve(points, frame, color, { step: options.step !== false });
+      });
+      graph.svg.setAttribute('data-series-count', visible.length);
+      graph.render(markup);
+    }
+    function drawTop() {
+      const divisor = config.timeUnit === 'months' ? 30 : config.timeUnit === 'years' ? 365 : 1;
+      const timeLabel = config.timeUnit === 'months' ? 'Время, мес' : config.timeUnit === 'years' ? 'Время, лет' : 'Время, сут';
+      const well = selectedWell();
+      let values = data.rates; let definitions = rateDefinitions; let time = data.timeDays; let yLabel = 'Добыча/закачка'; let secondaryLabel = 'Обводненность';
+      if (config.topTab === 'cumulative') { values = data.cumulative; definitions = cumulativeDefinitions; yLabel = 'Накопленная добыча/закачка'; }
+      if (config.topTab === 'pressure') { values = { pressure: data.pressure }; definitions = [['pressure', 'Среднепластовое давление', '#a32232', 'бар']]; yLabel = 'Давление, бар'; }
+      if (config.topTab === 'wells' && well) { values = well.rates; time = well.timeDays || time; }
+      drawLegend(topLegend, definitions, values, config.topCurves, drawTop);
+      renderSeries(topChart, time, values, definitions, config.topCurves, { divisor, timeLabel, yLabel, secondaryLabel, secondaryRange: [0, 1], includeZero: config.topTab !== 'pressure', xTickCount: config.timeUnit === 'days' ? 8 : 6 });
+      topChart.svg.setAttribute('data-chart-tab', config.topTab);
+      caption.textContent = `Вариант ${source.variant}${config.topTab === 'wells' && well ? ' · ' + well.name : ''}`;
+    }
+    function drawBottom() {
+      const economy = data.economics || { timeMonths: [] };
+      let values = economy; let definitions = efficiencyDefinitions; let time = economy.timeMonths; let divisor = config.economicTime === 'years' ? 12 : 1;
+      let yLabel = 'NPV, CF, млн. руб'; let secondaryLabel = 'PI, IRR'; let secondaryRange;
+      if (config.bottomTab === 'costs') { values = economy.costs; definitions = costDefinitions; yLabel = 'Затраты, млн. руб'; }
+      if (config.bottomTab === 'taxes') { values = economy.taxes; definitions = taxDefinitions; yLabel = 'Налоги, млн. руб'; }
+      if (config.bottomTab === 'bhp') { const well = selectedWell(); values = { pressure: well?.pressure, waterCut: well?.rates?.waterCut }; definitions = [['pressure', 'Забойное давление', '#a32232', 'бар'], rateDefinitions[5]]; time = well?.timeDays || data.timeDays; divisor *= 30; yLabel = 'Давление, бар'; secondaryLabel = 'Обводненность'; secondaryRange = [0, 1]; }
+      const choices = config.bottomTab === 'bhp' ? config.topCurves : config.bottomCurves;
+      drawLegend(bottomLegend, definitions, values, choices, drawBottom);
+      renderSeries(bottomChart, time, values, definitions, choices, { divisor, timeLabel: config.economicTime === 'years' ? 'Время, лет' : 'Время, мес', yLabel, secondaryLabel, secondaryRange, height: 255 });
+      bottomChart.svg.setAttribute('data-chart-tab', config.bottomTab);
+    }
+    function drawLists() {
+      wellList.replaceChildren(...plannedWells.map(well => button(well.name, () => { config.well = well.name; config.topTab = 'wells'; drawLists(); drawTabs(); drawTop(); if (config.bottomTab === 'bhp') drawBottom(); notify(); }, { className: `nc-list-row nc-well-${well.kind}`, role: 'option', 'aria-selected': String(config.well === well.name) })));
+      variantList.replaceChildren(...[1, 2].map(variant => button(String(variant), () => { if (variant !== source.variant) window.dispatchEvent(new CustomEvent('numex:variant-select', { detail: { variant } })); }, { className: 'nc-list-row', role: 'option', 'aria-selected': String(source.variant === variant) })));
+      current.textContent = `Текущий вариант: ${source.variant}`;
+      stats.replaceChildren(...['recovery', 'npv', 'pi', 'capex'].filter(key => Number.isFinite(source.summary?.[key])).map(key => element('span', { text: `${metrics.find(([code]) => code === key)[1]}: ${numericLabel(source.summary[key])}` })));
+    }
+    drawTabs(); drawLists(); drawTop(); drawBottom();
+    return panel;
+  }
+  function validateProjectResults(value) {
+    if (value == null) return true;
+    if (!value || typeof value !== 'object' || ![1, 2].includes(value.variant) || typeof value.id !== 'string' || typeof (value.label ?? value.name) !== 'string' || !value.results || !value.summary) throw new Error('Invalid project result');
+    const data = value.results;
+    const validateTime = time => {
+      if (!Array.isArray(time) || time.length > 20000 || !time.every((value, index) => Number.isFinite(value) && (index === 0 || value >= time[index - 1]))) throw new Error('Invalid result time');
+    };
+    const validateSeries = (series, length) => {
+      if (!series || typeof series !== 'object' || Array.isArray(series)) throw new Error('Invalid result series');
+      Object.values(series).forEach(values => { if (!Array.isArray(values) || values.length !== length || !values.every(value => value === null || Number.isFinite(value))) throw new Error('Invalid result points'); });
+    };
+    validateTime(data.timeDays);
+    validateSeries(data.rates, data.timeDays.length);
+    if (data.cumulative) validateSeries(data.cumulative, data.timeDays.length);
+    if (data.pressure) validateSeries({ pressure: data.pressure }, data.timeDays.length);
+    if (data.economics) {
+      validateTime(data.economics.timeMonths);
+      const { timeMonths, costs, taxes, ...series } = data.economics;
+      validateSeries(series, timeMonths.length);
+      if (costs) validateSeries(costs, timeMonths.length);
+      if (taxes) validateSeries(taxes, timeMonths.length);
+    }
+    if (data.wells) {
+      if (!Array.isArray(data.wells) || data.wells.length > 500) throw new Error('Invalid result wells');
+      data.wells.forEach(well => {
+        if (typeof well.name !== 'string' || well.name.length > 100) throw new Error('Invalid result well name');
+        const time = well.timeDays || data.timeDays; validateTime(time); validateSeries(well.rates, time.length);
+        if (well.pressure) validateSeries({ pressure: well.pressure }, time.length);
+      });
+    }
+    return true;
+  }
+  function setProjectResults(value) {
+    validateProjectResults(value);
+    projectResults = value == null ? null : clone(value);
+    if (projectResults) {
+      projectResults.label = projectResults.label ?? projectResults.name;
+      state.results.variant = projectResults.variant;
+      if (!(projectResults.results.wells || []).some(well => well.name === state.results.well)) state.results.well = '';
+    }
+    refreshPanel('results'); refreshPanel('scenarios');
+  }
+  const creators = { initialization, reservoir: initialization, economics, scenarios, results: () => projectResults ? projectResultPanel() : results() };
   function refreshPanel(pageId) { const existing = panels.get(pageId); if (!existing) return; const replacement = creators[pageId](); existing.replaceChildren(...replacement.childNodes); }
   function createPanel(pageId) { if (panels.has(pageId)) return panels.get(pageId); const creator = creators[pageId]; if (!creator) return null; const panel = creator(); panel.dataset.page = pageId; panels.set(pageId, panel); return panel; }
   function getState() { return clone(state); }
@@ -280,12 +441,12 @@
     }
     if (next.results) {
       const config = { ...initialState.results, ...next.results };
-      if (![1, 2, 3, 4, 5].includes(config.variant) || !(config.well === '' || wells.some(([well]) => well === config.well)) || typeof config.restart !== 'boolean' || !['days', 'months', 'years'].includes(config.timeUnit) || !['forecast', 'history', 'all'].includes(config.forecast) || !['months', 'years'].includes(config.economicTime)) throw new Error('Invalid result selection');
+      if (![1, 2, 3, 4, 5].includes(config.variant) || typeof config.well !== 'string' || config.well.length > 100 || typeof config.restart !== 'boolean' || !['days', 'months', 'years'].includes(config.timeUnit) || !['forecast', 'history', 'all'].includes(config.forecast) || !['months', 'years'].includes(config.economicTime) || !['rates', 'cumulative', 'pressure', 'wells'].includes(config.topTab) || !['efficiency', 'costs', 'taxes', 'bhp'].includes(config.bottomTab)) throw new Error('Invalid result selection');
       for (const key of ['topCurves', 'bottomCurves']) if (!config[key] || typeof config[key] !== 'object' || Array.isArray(config[key]) || !Object.entries(config[key]).every(([name, enabled]) => name in initialState.results[key] && typeof enabled === 'boolean')) throw new Error('Invalid curve selection');
     }
     return true;
   }
   function setState(next) { validateState(next); if (next.scenario) state.scenario = { ...clone(initialState.scenario), ...clone(next.scenario) }; if (next.results) state.results = { ...clone(initialState.results), ...clone(next.results), topCurves: { ...initialState.results.topCurves, ...next.results.topCurves }, bottomCurves: { ...initialState.results.bottomCurves, ...next.results.bottomCurves } }; [...panels.keys()].forEach(refreshPanel); }
   function resetState() { state = clone(initialState); [...panels.keys()].forEach(refreshPanel); }
-  window.NUMEXCharts = { createPanel, getState, validateState, setState, resetState };
+  window.NUMEXCharts = { createPanel, getState, validateState, setState, resetState, validateProjectResults, setProjectResults };
 })();

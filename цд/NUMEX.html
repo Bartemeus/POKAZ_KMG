@@ -21,12 +21,13 @@
       <div class="пункт-меню">
         <button data-меню="файл" aria-expanded="false">Файл</button>
         <div id="файл" class="выпадающее" hidden>
-          <button data-действие="открыть">Открыть параметры…</button>
+          <button data-действие="открыть">Открыть проект / параметры…</button>
           <button data-действие="сохранить">Сохранить параметры…</button>
           <hr><button data-действие="исходные">Восстановить значения из видео</button>
         </div>
       </div>
       <button data-действие="сохранить">Сохранить</button>
+      <label class="numex-project-picker">Проект <select id="numex-project-select" aria-label="Проект NUMEX"></select></label>
       <button disabled>3D-просмотр</button>
       <button disabled>Optimize</button>
       <div class="пункт-меню">
@@ -85,8 +86,8 @@
         <label><input type="checkbox" form="расчетные-параметры" name="серийный" checked>Серийный расчет</label>
         <label><input type="checkbox" form="расчетные-параметры" name="рестарт">Создать точку рестарта</label>
         <label><input type="checkbox" form="расчетные-параметры" name="редактирование">Ручное редактирование</label>
-        <button disabled>Расчет</button>
-        <button disabled>Расчет экономики</button>
+        <button id="numex-calculate">Расчет</button>
+        <button id="numex-calculate-economics">Расчет экономики</button>
         <div class="прогресс"><progress max="100" value="0" aria-label="Ход расчета"></progress><span>0%</span></div>
         <span class="время">Время расчета:</span>
       </div>
@@ -155,5 +156,7 @@
 <script src="NUMEX/pages.js"></script>
 <script src="NUMEX/charts.js"></script>
 <script src="NUMEX/workspace.js"></script>
+<script src="NUMEX/project-data.js"></script>
+<script src="NUMEX/projects.js"></script>
 </body>
 </html>

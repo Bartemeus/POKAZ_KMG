@@ -128,8 +128,8 @@
             flag('maximumDrawdown', 'Максимальная депрессия, бар', false, { value: '100.0' })
           ]),
           field('producerSkin', 'Скин фактор (ННС без ГРП)', '0.0'), field('producerRadius', 'Радиус скважины, м', '0.1'),
-          choice('producerType', 'Тип скважины', 'ГС'), group('fractureParameters', 'Параметры трещины', [], { unavailable: true }),
-          group('horizontalParameters', 'Параметры гор. скважины/осн. ствола', [], { unavailable: true }),
+          choice('producerType', 'Тип скважины', 'ГС', { options: ['ННС', 'ГС'] }), group('fractureParameters', 'Параметры трещины', [], { unavailable: true }),
+          group('horizontalParameters', 'Параметры гор. скважины/осн. ствола', [field('horizontalLength', 'Длина горизонтального ствола, м', '250.0'), field('horizontalAngle', 'Азимут горизонтального ствола, град', '235.0')]),
           field('producerAvailability', 'Коэфф. эксплуатации, д.е.', '1.0'),
           group('producerConnection', 'Коэфф. связи (WPIMULT)', [field('producerConnectionValue', 'Постоянное значение', '1.0'), action('producerConnectionTime', 'Зависимость от времени', 'Загрузить', { checked: false })]),
           field('producerDFactor', 'D-фактор (для газа)', '0.0'),
