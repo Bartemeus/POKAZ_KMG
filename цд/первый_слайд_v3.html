@@ -39,15 +39,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
    меняем только компактность: gap:8 и увеличенный padding у step —
    этого хватает, чтобы длинные названия шагов пласта не сливались,
    а мини-пирог по-прежнему помещается в свободном низу. */
-#stack.выбран{gap:8px}
-#stack.выбран .lay.step{padding:9px 12px;margin-top:2px}
-#stack.выбран .lay.step .t{line-height:1.35}
-#stack.выбран .lay{padding:7px 11px}
-#stack.выбран .lay .t{font-size:19px;line-height:1.2}
-#stack.выбран .lay .n{font-size:17px}
-#stack.выбран .lay.step{padding:5px 9px}
-#stack.выбран .lay.step .t{font-size:16.5px;line-height:1.25}
-#stack.выбран .lay.step .n{font-size:16px}
+/* 28.09 (Адиль, поправка): стек сжат по вертикали, чтобы между ним и
+   мини-пирогом снизу был воздух. Один блок правил у step в новом
+   компактном виде (прежде было два конфликтующих). */
+#stack.выбран{gap:5px}
+#stack.выбран .lay{padding:6px 11px}
+#stack.выбран .lay .t{font-size:17.5px;line-height:1.18}
+#stack.выбран .lay .n{font-size:16px}
+#stack.выбран .lay.step{padding:5px 10px;margin-top:2px}
+#stack.выбран .lay.step .t{font-size:15px;line-height:1.28}
+#stack.выбран .lay.step .n{font-size:15px}
 #stack.выбран #navdot{box-shadow:0 0 0 3px rgba(5,8,16,.9);transition:none}
 #stack.выбран #navfill{transition:none}
 #stack.скрыт{opacity:0;pointer-events:none;transform:translateY(calc(-50% - 14px))}
@@ -268,6 +269,23 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #справка .rw.эффект .v{font-size:17px;color:#DCE7F5;align-self:auto;line-height:1.35}
 #справка .гр{padding:0 0 6px;font-family:var(--mono);font-size:14px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan)}
 #справка .src{margin-top:10px;font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:#5E7089}
+/* 28.09 (Адиль): в финальном кадре карточка «Первый актив» справа заменяется
+   на блок «ТОП-12 месторождений» (данные из подводки demo_with_map.html).
+   Позиционируется той же плашкой справа-по-центру, что и #справка, — чтобы
+   при переключении блока пользователь оставался в том же слоте кадра. */
+#топ12{position:fixed;right:26px;top:50%;transform:translateY(-50%) translateX(40px);width:32vw;min-width:420px;max-width:600px;
+  max-height:86vh;z-index:11;padding:20px 24px;overflow:hidden auto;
+  background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));border:1px solid rgba(140,170,210,.16);
+  opacity:0;transition:opacity .5s,transform .6s cubic-bezier(.22,.61,.36,1);pointer-events:none}
+#топ12.on{opacity:1;transform:translateY(-50%);pointer-events:auto}
+#топ12 .kicker{font-family:var(--mono);font-size:16.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+#топ12 h3{font-family:var(--serif);font-size:32px;font-weight:600;line-height:1.15;color:#F2F7FF;margin:0}
+#топ12 .lead{font-size:17px;color:#9DB4CE;margin-top:8px;padding-bottom:14px;border-bottom:1px solid rgba(140,170,210,.16)}
+#топ12 .lead b{color:var(--cyan);font-weight:700}
+#топ12 .обл{margin-top:14px}
+#топ12 .обл .нм{font-family:var(--mono);font-size:14.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:4px}
+#топ12 .обл .комп{font-size:14.5px;color:#7C8DA6;line-height:1.4;margin-bottom:6px}
+#топ12 .обл .мест{font-size:16px;color:#DCE7F5;line-height:1.5;padding:8px 12px;border-left:2px solid rgba(79,227,255,.35);background:rgba(79,227,255,.04);border-radius:0 8px 8px 0}
 /* ко второй части показа — скрыта по решению от 14.08; вернуть: убрать display:none */
 #next{display:none;left:26px;bottom:22px}
 /* 25.09: кнопка возвращена — справа-сверху, чтобы не спорить с блоком
@@ -493,6 +511,26 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 <button id="pilot" type="button"><span>Первый актив</span><span class="arw">→</span></button>
 <div id="справка"><div class="hd"></div><div class="nm"></div><div class="sub"></div>
   <div class="паспорт ярус"></div><div class="сделано ярус"></div></div>
+<!-- 28.09 (Адиль): справа в финальном кадре — блок «ТОП-12 месторождений»
+     (в каких активах внедряем ЦД). Данные — из подводки demo_with_map.html,
+     без блока эффектов (пользователь оставил только карточку месторождений). -->
+<div id="топ12">
+  <div class="kicker">2026–2028</div>
+  <h3>ТОП-12 месторождений КМГ</h3>
+  <div class="lead">обеспечивают <b>более 90 %</b> добычи</div>
+  <div class="обл"><div class="нм">Атырауская область</div>
+    <div class="комп">АО «Эмбамунайгаз»</div>
+    <div class="мест">м/р «Восточный Молдабек» · м/р «С. Нуржанова»</div></div>
+  <div class="обл"><div class="нм">Мангистауская область</div>
+    <div class="комп">АО «Озенмунайгаз» · АО «Мангистаумунайгаз» · АО «Каражанбасмунай»</div>
+    <div class="мест">м/р «Узень» · м/р «Карамандыбас» · м/р «Каламкас» · м/р «Жетыбай» · м/р «Каражанбас» · м/р «Асар»</div></div>
+  <div class="обл"><div class="нм">Актюбинская область</div>
+    <div class="комп">ТОО «Казахтуркмунай» · ТОО «Казахойл Актобе»</div>
+    <div class="мест">м/р «Каратобе Южное» · м/р «Алибекмола» · м/р «Кожасай»</div></div>
+  <div class="обл"><div class="нм">Кызылординская область</div>
+    <div class="комп">ТОО «СП Казгермунай»</div>
+    <div class="мест">м/р «Акшабулак Центральный»</div></div>
+</div>
 <div id="эффекты"><div class="hd"></div><div class="body"></div><div class="road"></div></div>
 <div id="chip"></div>
 <!-- подписи точек бурения: HTML поверх сцены, чтобы цифры оставались чёткими -->
@@ -1818,16 +1856,16 @@ const УХОД_ВНИЗ = 260;          // и вниз, в тот же угол 
    высоты окна, потому что и сама модель на экране растёт вместе с ней.
    MINI_HEIGHT_RATIO ещё и отдана панели через CSS-переменную: панель не
    должна заезжать в угол, поэтому её max-height считается от неё же. */
-/* 26.09 (Адиль): «подними мини-тортик выше, чтоб все слои были видны —
-   некоторые уходят вниз за рамки». Три слоя со своим объёмом плюс два
-   разрыва оказываются выше рамки высотой 39vh — нижний край срезается.
-   Ratio увеличен до 0.56 (центр бокса поднимается на ~85 px), scale
-   уменьшен до 0.42 — стек занимает столько же места по ширине, но по
-   высоте с запасом влезает целиком и никуда не уходит. */
-const MINI_SCALE = 0.42;
-const MINI_HEIGHT_RATIO = 0.56;
+/* 28.09 (Адиль): «мини наезжает на левую панель — размести пирог в
+   изначальном кадре немного выше». Уменьшил ratio 0.56 → 0.44 и
+   поднял нижний отступ на 32 → 52 px: mini центр уезжает выше, и
+   между низом стека (top:50% + translateY(-50%) + высота списка) и
+   верхним краем мини остаётся зазор. Плиты остаются читаемыми — три
+   слоя по-прежнему разделены. */
+const MINI_SCALE = 0.38;
+const MINI_HEIGHT_RATIO = 0.44;
 const MINI_ASPECT_RATIO = 0.90;
-const MINI_MARGIN = 34;
+const MINI_MARGIN = 52;
 const MINI_TRANSITION_MS = 900;
 document.documentElement.style.setProperty('--мини-высота', (MINI_HEIGHT_RATIO*100) + 'vh');
 document.documentElement.style.setProperty('--mini-width', (MINI_HEIGHT_RATIO*MINI_ASPECT_RATIO*100) + 'vh');
@@ -2018,6 +2056,7 @@ function openProject(id){
   // Справка о В. Молдабеке уходит на время раскрытия слоя: место справа занято
   // содержимым слоя, а сама справка вернётся при закрытии (см. closeProject).
   if(window.__закрытьСправку) window.__закрытьСправку();
+  if(window.__закрытьТоп12) window.__закрытьТоп12();
   if(!isSwitch) запомнитьОткуда();
   const pc = $('project-content');
   const populateContent = () => {
@@ -2137,17 +2176,17 @@ function finishClosing(){
   controls.autoRotate = true;
   controls.enabled = true;
   refresh();
-  // Возвращаемся в исходный кадр — справка о В. Молдабеке снова стоит справа
-  // (см. openProject: там она уходит на время раскрытия слоя).
-  if(window.__открытьСправку) window.__открытьСправку();
-  /* 25.09 (Адиль): после первого возврата из слоя ключевые эффекты
-     сверху разворачиваются в «финальный» набор — те же две карточки,
-     но с дополнительными цифрами (2 864 тыс. тонн доп. добычи ·
-     326 млрд ₸ · 3–5 % от EBITDA). Один раз переключаем и уже не
-     возвращаемся к сжатой версии: следующий возврат просто перерисует
-     тот же финальный набор. */
+  /* 28.09 (Адиль): «в финальном кадре вместо блока про первый актив покажем
+     ТОП-12 месторождений, где мы внедряем ЦД». После первого возврата из
+     слоя карточка «Первый актив» справа не всплывает — вместо неё
+     открывается #топ12 (список 12 месторождений по областям).
+     Одновременно ключевые эффекты сверху разворачиваются в «финальный»
+     набор: 2 864 тыс. тонн доп. добычи · 326 млрд ₸ · 3–5 % от EBITDA.
+     Один раз переключаем и уже не возвращаемся к первому виду. */
   эффектыФиналВид = true;
   рендерЭффекты();
+  if(window.__закрытьСправку) window.__закрытьСправку();
+  if(window.__открытьТоп12) window.__открытьТоп12();
 }
 document.getElementById('pc-back').addEventListener('click', closeProject);
 document.getElementById('mini-reset').addEventListener('click', e => {
@@ -2467,9 +2506,11 @@ function positionEffectsOverview(){
   const stackRect = elStack.getBoundingClientRect();
   effects.style.left = stackRect.left + 'px';
   effects.style.width = Math.max(stackRect.width, Math.min(560, innerWidth * .3 - 52)) + 'px';
-  /* 26.09 (Адиль): при поднятии стека к top:200px эффекты стали лезть под h1.
-     Минимум top — 96 px, чтобы всегда оставаться под шапкой заголовка. */
-  effects.style.top = Math.max(96, stackRect.top - effects.offsetHeight - 12) + 'px';
+  /* 28.09 (Адиль): «блок с ключевыми эффектами должен быть выше чем левая
+     панель, а то она слишком близко». Минимум top — 66 px (h1 занимает
+     ~60 px, оставляем узкий зазор), эффекты садятся сразу под шапкой,
+     дальше от стека — глазу проще прочитать их отдельно. */
+  effects.style.top = Math.max(66, stackRect.top - effects.offsetHeight - 20) + 'px';
 }
 
 /* Заливка линии и бегущая точка доходят до текущего узла: видно, что процесс
@@ -2683,9 +2724,12 @@ function обновитьГоризонт(){
   elГориз.style.top  = ((-_вект.y * 0.5 + 0.5) * innerHeight) + 'px';
 }
 function обновитьМеткиТЭО(){
-  const показывать = меткиТЭО.length && !state.openId && (
-    (state.locked === 'plast' && panelState.sub === 2) ||
-    (state.hover === 'plast' && state.hoverSub === 2));
+  /* 28.09 (Адиль): «инфа про горизонтальную и наклонно-направленную не
+     должна пропадать при отображении трёх слоёв» — раньше плашки показывались
+     только на sub === 2 (ТЭО). Теперь показываем при любом активном пласте
+     (клик по общему контуру, любой шаг): столбы бурения тоже включаются
+     раньше, см. правку в цикле subs3d. */
+  const показывать = меткиТЭО.length && !state.openId && state.locked === 'plast';
   elTeo.classList.toggle('on', !!показывать);
   if(!показывать) return;
   if(!подписиТЭО.length) создатьМеткиТЭО();
@@ -3030,7 +3074,10 @@ function animate(){
         : (state.locked === 'plast' ? panelState.sub : null);
       // столбы ранжирования выходят вместе со слоем оценки
       if(z.столбы){
-        const вид = (aSub === 2 && !state.openId) ? 1 : 0;   // столбы ранжирования без подписей (см. обновитьМеткиТЭО) в миниатюре — просто палки
+        /* 28.09 (Адиль): столбы бурения включаются при любом активном пласте,
+           не только на sub === 2. Плашки VMB (см. обновитьМеткиТЭО) тоже
+           показываются на всём слое пласта — 3D-подпорки должны быть на месте. */
+        const вид = (plastActive && !state.openId) ? 1 : 0;
         z.видСтолбов = (z.видСтолбов === undefined ? 0 : z.видСтолбов) + (вид - (z.видСтолбов === undefined ? 0 : z.видСтолбов))*k;
         // погашенные столбы убираем из рендера целиком — иначе они всё равно
         // участвуют в проходе прозрачности и мажут соседние слои
@@ -3286,18 +3333,55 @@ let ярусСпр = 0;
      сценарий (0 → 1 → 2 → 0) с одинарным открытием остаётся под клавишей Esc
      для быстрого сброса. При возврате из слоя справка снова открывается
      сразу двумя ярусами (window.__открытьСправку → показать(2)). */
+  /* 28.09 (Адиль): в финальном кадре кнопка «Первый актив» переключает не
+     карточку В. Молдабека, а блок «ТОП-12 месторождений» — карточка
+     первого актива после первого возврата больше не показывается. */
   if(кн) кн.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
     закрытьЭффекты();
-    показать(ярусСпр > 0 ? 0 : 2);
+    if(эффектыФиналВид){
+      const т = document.getElementById('топ12');
+      const открыт = т && т.classList.contains('on');
+      if(открыт){ window.__закрытьТоп12 && window.__закрытьТоп12(); }
+      else { window.__открытьТоп12 && window.__открытьТоп12(); }
+    } else {
+      показать(ярусСпр > 0 ? 0 : 2);
+    }
   });
-  addEventListener('keydown', e => { if(e.key === 'Escape'){ показать(0); закрытьЭффекты(); } });
+  addEventListener('keydown', e => {
+    if(e.key === 'Escape'){
+      показать(0); закрытьЭффекты();
+      if(window.__закрытьТоп12) window.__закрытьТоп12();
+    }
+  });
   window.__закрытьСправку = () => показать(0);
   window.__открытьСправку = () => показать(2);
   /* `?справка=N` — карточка с N ярусами при загрузке (снимки/deep-link);
      без параметра справка стартует свёрнутой — открывается кнопкой. */
   const н = +(new URLSearchParams(location.search).get('справка') || 0);
   if(н > 0) setTimeout(() => показать(н), 400);
+})();
+
+/* ── карточка «ТОП-12 месторождений» ─────────────────────────────────
+   28.09 (Адиль): показывается в финальном кадре вместо справки о В. Молдабеке
+   (см. finishClosing / кнопка Первый актив). Тот же слот справа, тот же
+   плавный fade. */
+(function карточкаТоп12(){
+  const т = document.getElementById('топ12');
+  const кн = document.getElementById('pilot');
+  if(!т) return;
+  window.__открытьТоп12 = () => {
+    т.classList.add('on');
+    if(кн){
+      кн.classList.add('on');
+      const первый = кн.querySelector('span:first-child');
+      if(первый) первый.textContent = 'ТОП-12 месторождений';
+    }
+  };
+  window.__закрытьТоп12 = () => {
+    т.classList.remove('on');
+    if(кн) кн.classList.remove('on');
+  };
 })();
 
 /* ── карточка эффектов ────────────────────────────────────────────────
