@@ -36,9 +36,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 /* 25.09 (Адиль): «сдвинь левый блок выше, чтоб мини-пирог мог вмешаться».
    В раскрытом виде подшаги удлиняют список, и его центр опускался в
    низ экрана — под угол, куда садится мини-стопка. Прижимаем стек
-   к верху сразу под блоком эффектов (top:200px, translateY снимаем)
-   и уменьшаем gap — низ левой колонки освобождается под мини-пирог. */
-#stack.выбран{top:200px;transform:none;gap:4px}
+   к верху сразу под блоком эффектов (top:200px, translateY снимаем).
+   28.09: gap 4 → 8 и padding у step увеличены — при длинных названиях
+   подшагов пласта («Построение и актуализация геолого-гидродинамической
+   модели» и т.д.) соседние строки в состоянии «выбран» наезжали друг
+   на друга; теперь между кнопками виден зазор. */
+#stack.выбран{top:200px;transform:none;gap:8px}
+#stack.выбран .lay.step{padding:9px 12px;margin-top:2px}
+#stack.выбран .lay.step .t{line-height:1.35}
 #stack.выбран .lay{padding:7px 11px}
 #stack.выбран .lay .t{font-size:19px;line-height:1.2}
 #stack.выбран .lay .n{font-size:17px}
@@ -617,7 +622,11 @@ const RANK_UP = ['plast','skv','naz'];           // порядок слоёв с
    ================================================================ */
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, innerWidth/innerHeight, 1, 4000);
-camera.position.set(385, 278, 385);   // с запасом, чтобы куб влезал в коридор между панелями
+/* 28.09 (Адиль): «угол наклона пирога ниже — сейчас как будто сверху, а нужно
+   видеть все слои вместе». Camera Y уменьшена с 278 до 130 — polar ~78° вместо
+   62°, взгляд идёт почти горизонтально, стек читается как «этажи» с чётко
+   различимой боковой гранью каждого слоя. */
+camera.position.set(385, 130, 385);   // с запасом, чтобы куб влезал в коридор между панелями
 /* 18.09: стопка по умолчанию раскрыта и выше собранной — камера дальше, иначе верх и низ
    уходят за кадр (константа объявлена ниже, но к первому кадру уже есть) */
 if (new URLSearchParams(location.search).get('коротко') === '1' && new URLSearchParams(location.search).get('стопка') !== '1') camera.position.multiplyScalar(1.22);
@@ -2191,10 +2200,20 @@ renderer.domElement.addEventListener('click', e => {
     }
     return;
   }
-  if(state.hover){
-    if(state.hover === 'plast' && state.hoverSub === 0) return;   // ГГДМ остаётся только визуальным слоем
-    if(state.hover === 'plast') panelState.sub = state.hoverSub;
-    launchProject(state.hover);
+  /* 28.09 (Адиль): hover больше не подсвечивает плиту (см. правку ниже — блок
+     обновления state.hover в animate убран). Значит клик по 3D сам должен
+     сделать raycast и по нему решить, какой слой открывать, — а не полагаться
+     на подготовленный state.hover. */
+  ptr.set((e.clientX/innerWidth)*2 - 1, -(e.clientY/innerHeight)*2 + 1);
+  raycaster.setFromCamera(ptr, camera);
+  const пикМешиКлик = state.locked ? pickMeshes : restPickMeshes;
+  const попал = raycaster.intersectObjects(пикМешиКлик, false)[0];
+  const zoneClick = попал ? попал.object.userData.zone : null;
+  const subClick = попал ? попал.object.userData.sub ?? null : null;
+  if(zoneClick){
+    if(zoneClick === 'plast' && subClick === 0) return;   // ГГДМ остаётся визуальным слоем
+    if(zoneClick === 'plast') panelState.sub = subClick;
+    launchProject(zoneClick);
   }
   else if(state.locked){ state.locked = null; refresh(); }
 });
@@ -2281,8 +2300,9 @@ function buildStack(){
     const ном = String(Number(zd.no)) || '';
     b.innerHTML = `<div class="n">${ном}</div><div class="t">${zd.name}</div>`
                 + ((zd.subs || []).length ? '<i class="ch"></i>' : '');
-    b.addEventListener('mouseenter', () => { state.hover = id; state.hoverSub = null; refresh(); });
-    b.addEventListener('mouseleave', () => { state.hover = null; refresh(); });
+    /* 28.09 (Адиль): hover в списке слоёв больше не подсвечивает плиту —
+       фидбек «отвлекает». Оставляем только click; при наведении ничего не
+       меняем. */
     /* 25.09 (Адиль): «по левому краю не нужно, чтобы тортик уходил вниз и
        открывалась система, а только раскрытие по пунктам и подсвечивание
        слоя». Клик по контуру фиксирует его как активный (`state.locked`) —
@@ -2307,8 +2327,7 @@ function buildStack(){
       sb.className = 'lay step'; sb.id = `lay-step-${id}-${si}`;
       sb.style.setProperty('--lc', s.color || zd.color);
       sb.innerHTML = `<div class="n">${ном}.${si + 1}</div><div class="t">${s.t}</div>`;
-      sb.addEventListener('mouseenter', () => { state.hover = id; state.hoverSub = si; refresh(); });
-      sb.addEventListener('mouseleave', () => { state.hoverSub = null; refresh(); });
+      /* 28.09: hover шага в списке — тоже без подсветки плиты. */
       sb.addEventListener('click', () => {
         if(state.launching || state.closing) return;
         // ГГДМ — нижний слой без ссылки: то же ограничение, что и на клике по
@@ -2750,43 +2769,23 @@ function animate(){
       hitSub = hits[0].object.userData.sub ?? null;
     }
   }
-  /* `заморожен` ставит только служебный вход `?наведение=1`: мыши там нет,
-     трассировка каждый кадр не находит ничего и сбрасывала бы выставленное
-     наведение обратно в ноль. На показе флаг не поднимается никогда. */
-  if(!state.заморожен && !state.launching && !state.closing && (hitZone !== state.hover || hitSub !== state.hoverSub)){
-    const overUI = document.querySelector('#stack:hover, #panel:hover, #project-content:hover');
-    if(overUI){
-      if(state.openId && state.hover !== null){ state.hover = null; state.hoverSub = null; refresh(); }
-    } else {
-      state.hover = hitZone; state.hoverSub = hitSub; refresh();
-    }
-  }
+  /* 28.09 (Адиль): «убери отображение слоя при наведении — отвлекает, когда
+     случайно мышкой туда наводишь». Раньше raycast каждый кадр записывал
+     hitZone/hitSub в state.hover и звал refresh() — плита подсвечивалась.
+     Теперь наведение не меняет ничего: state.hover обновляется только при
+     клике (см. launchProject), а renderer.click делает свой raycast сам.
+     Курсор всё же меняется на «указатель» над кликабельной плитой (см.
+     canClick ниже) — это единственный визуальный сигнал наведения. */
   const isDisabledGgdm = hitZone === 'plast' && hitSub === 0;
   const canClick = hitZone && !isDisabledGgdm && (
     !state.openId || hitZone !== state.openId || (hitZone === 'plast' && hitSub !== null)
   );
   renderer.domElement.style.cursor = canClick ? 'pointer' : '';
 
-  if(canClick && state.openId){
-    // при открытом контенте подсказка — только название слоя под курсором
-    chip.style.display = 'block';
-    chip.style.left = (mouseXY[0]+16)+'px';
-    chip.style.top = (mouseXY[1]+14)+'px';
-    chip.style.setProperty('--cc', ZONES[hitZone].color);
-    chip.textContent = ZONES[hitZone].short;
-  } else if(hitZone && !state.locked){
-    chip.style.display = 'block';
-    chip.style.left = (mouseXY[0]+16)+'px';
-    chip.style.top = (mouseXY[1]+14)+'px';
-    if(hitZone === 'plast' && hitSub !== null){
-      const s = ZONES.plast.subs[hitSub];
-      chip.style.setProperty('--cc', s.color || ZONES.plast.color);
-      chip.textContent = s.shortT;
-    } else {
-      chip.style.setProperty('--cc', ZONES[hitZone].color);
-      chip.textContent = ZONES[hitZone].short;
-    }
-  } else chip.style.display = 'none';
+  /* 28.09: chip-подсказка при наведении на плиту скрыта — одна из «отвлекающих
+     мелочей» на hover, о которых говорил заказчик. Оставили сам элемент в DOM
+     на случай возврата. */
+  chip.style.display = 'none';
 
   // стек финальных позиций — слои не перекрываются при любом выборе
   const act = active();
@@ -3034,18 +3033,22 @@ function animate(){
       }
       const sc2 = 1 + 0.05*m;
       z.subs3d.forEach((s, si) => {
-        // раздвижка: базовая при выборе пласта; при выборе конкретной составляющей
-        // она встаёт в центр слоя, соседние разъезжаются заметно дальше
-        let tOff = 0;
-        if(plastActive){
-          const base = (si === 0 ? -8 : si === 2 ? 8 : 0);   // si: 0 — нижняя, 2 — верхняя
-          if(aSub === null) tOff = base;
-          else if(si === aSub) tOff = base;                  // выбранная остаётся на месте
-          else tOff = base + (si < aSub ? -1 : 1) * 34 * Math.abs(si - aSub);   // соседние уезжают
+        /* 28.09 (Адиль): три подслоя пласта должны быть отдельно видны всегда
+           (как две верхних плиты «Скважина» и «Наземка»), не только при клике
+           на пласт. Базовая раздвижка +/-14 применяется независимо от
+           plastActive. При активном пласте — сильнее (умножается на 1.6),
+           плюс масштаб выбранного шага крупнее (1.32) и заметно выделен. */
+        const БАЗА = 14;
+        const множ = plastActive ? 1.6 : 1;
+        let tOff = (si === 0 ? -БАЗА : si === 2 ? БАЗА : 0) * множ;
+        if(plastActive && aSub !== null && si !== aSub){
+          tOff = tOff + (si < aSub ? -1 : 1) * 40 * Math.abs(si - aSub);
         }
         s.off += (tOff - s.off)*k;
         /* Любая наведённая составляющая, включая ТЭО, становится крупнее соседних. */
-        const tScale = !plastActive || aSub === null ? 1 : (aSub === si ? 1.22 : 0.93);
+        const tScale = !plastActive
+          ? 1.06
+          : aSub === null ? 1.14 : (aSub === si ? 1.32 : 0.94);
         s.scl = (s.scl === undefined) ? 1 : s.scl + (tScale - s.scl)*k;
         const cy = (s.st + s.sb)/2;
         s.wrap.scale.set(s.scl, s.scl, s.scl);
