@@ -131,8 +131,11 @@ export function bindInput(){
      unused Escape it asks the slide to close the layer, so the presenter does
      not get trapped inside the embedded application. */
   addEventListener('message', event => {
-    const numexFrame = document.getElementById('content-numex');
-    if(event.source === numexFrame?.contentWindow && event.data?.тип === 'NUMEX:закрыть') onEscape();
+    const numexFrames = [
+      document.getElementById('content-numex'),
+      document.getElementById('content-numex-optimize'),
+    ];
+    if(numexFrames.some(frame => event.source === frame?.contentWindow) && event.data?.тип === 'NUMEX:закрыть') onEscape();
   });
   if(IN_FRAME) addEventListener('keydown', forwardToParent);
 

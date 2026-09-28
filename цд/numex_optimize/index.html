@@ -1170,6 +1170,17 @@ function инициализироватьДашбордНумекс(){
 }
 window.инициализироватьДашбордНумекс = инициализироватьДашбордНумекс;
 
+/* Во встроенном показе крестик окна и Escape возвращают к 3D-двойнику.
+   При обычном автономном запуске страницы этот контракт не включается. */
+if(window.parent !== window && new URLSearchParams(location.search).get('в_презентации') === '1'){
+  window.__закрытьКонтент = () => {
+    parent.postMessage({тип:'NUMEX:закрыть'}, location.origin === 'null' ? '*' : location.origin);
+  };
+  addEventListener('keydown', событие => {
+    if(событие.key === 'Escape') window.__закрытьКонтент();
+  });
+}
+
 
 // Автоматический запуск дашборда при открытии страницы
 document.addEventListener('DOMContentLoaded', () => {
