@@ -33,9 +33,9 @@ jobs:
           if (-not (Test-Path -LiteralPath "$package/медиа")) { throw 'Нет медиафайлов' }
           Compress-Archive -Path "$package/*" -DestinationPath 'POKAZ_KMG_Portable.zip' -CompressionLevel Optimal
 
-      - name: Установить Inno Setup
+      - name: Установить NSIS
         shell: pwsh
-        run: choco install innosetup --yes --no-progress --limit-output
+        run: choco install nsis --yes --no-progress --limit-output
 
       - name: Собрать установщик
         shell: pwsh
