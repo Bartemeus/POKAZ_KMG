@@ -302,6 +302,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
    кнопка pilot прячется — блок #топ12 всё равно открывается сам из
    finishClosing (см. window.__открытьТоп12). */
 body.финал #pilot{display:none}
+/* 29.09 (Адиль): внизу — кнопки 1–8, переходы на страницы показа (см. флоу
+   в конце файла). Активная подсвечена тем же циан, что и кнопки сверху. */
+#страницы{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:17;display:flex;gap:6px;
+  padding:5px 7px;background:rgba(6,11,20,.82);border:1px solid var(--line);backdrop-filter:blur(6px)}
+#страницы button{min-width:40px;height:34px;padding:0 8px;font:600 17px/1 var(--mono);color:var(--dim);
+  background:transparent;border:1px solid transparent;cursor:pointer;
+  transition:color .2s,border-color .2s,background .2s}
+#страницы button:hover{color:var(--txt);border-color:var(--line)}
+#страницы button.on{color:var(--cyan);border-color:var(--cyan);background:rgba(79,227,255,.08)}
 /* 25.09: подсветка ключевых цифр в паспорте актива (36,7 % и 14,8 млн тонн)
    — заказчик просил «как-то выделить». Тот же циан, что у главных эффектов
    и линии процесса, чтобы не изобретать своего цвета. */
@@ -2232,7 +2241,7 @@ function closeProject(){
 /* v5: откат такта «назад» с первого слоя закрывает слой, но в финальный вид
    (ТОП-12, расширенные эффекты) попадать не должен — там нужен кадр «Первый
    актив», каким он был до открытия слоя. Флаг ставит сценарий внизу файла. */
-let возвратБезФинала = false;
+let возвратБезФинала = null;   // 'справка' — вернуть карточку «Первый актив»; 'начало' — ничего не открывать
 function finishClosing(){
   if(!state.closing) return;
   $('pc-system').removeAttribute('src');
@@ -2242,10 +2251,14 @@ function finishClosing(){
   controls.enabled = true;
   refresh();
   if(возвратБезФинала){
-    возвратБезФинала = false;
-    if(window.__открытьСправку) window.__открытьСправку();
+    const куда = возвратБезФинала;
+    возвратБезФинала = null;
+    if(куда === 'справка' && window.__открытьСправку) window.__открытьСправку();
     return;
   }
+  применитьФинал();
+}
+function применитьФинал(){
   /* 28.09 (Адиль): «в финальном кадре вместо блока про первый актив покажем
      ТОП-12 месторождений, где мы внедряем ЦД». После первого возврата из
      слоя карточка «Первый актив» справа не всплывает — вместо неё
@@ -3725,7 +3738,7 @@ if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
       document.getElementById('lay-naz').click();   // справка сбросила выбор — возвращаем раскрытую «инфраструктуру»
     },
     /* 4 */ async () => {
-      возвратБезФинала = true;   // finishClosing вернёт справку «Первый актив», а не финал с ТОП-12
+      возвратБезФинала = 'справка';   // finishClosing вернёт справку «Первый актив», а не финал с ТОП-12
       closeProject();
       await пауза(ЗАКРЫТИЕ_МС + 150);
     },
@@ -3758,15 +3771,113 @@ if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
     идёт = true;
     try { await шаги[текущий++](); }
     catch(err){ console.error('v5 шаг', текущий, err); }
-    finally { идёт = false; }
+    finally { идёт = false; обновитьНавигацию(); }
   }
   async function назадШаг(){
     if(идёт || текущий <= 0) return;
     идёт = true;
     try { await обратно[--текущий](); }
     catch(err){ console.error('v5 откат', текущий, err); }
-    finally { идёт = false; }
+    finally { идёт = false; обновитьНавигацию(); }
   }
+  /* 29.09 (Адиль): внизу кнопки 1–8 — прямой переход на страницу показа.
+     `такт` — сколько шагов сценария считается пройденным на этой странице:
+     после перехода клавиши «вперёд/назад» продолжают ровно с этого места.
+     Прямой переход, а не прокрутка шагами: с 8-й на 2-ю пришлось бы
+     проиграть шесть откатов подряд, ~15 секунд анимаций. */
+  const СТРАНИЦЫ = [
+    { имя:'Начало',                              такт:0 },
+    { имя:'Стратегия разработки',                такт:5,  слой:'plast', sub:1 },
+    { имя:'Технико-экономическая оценка · кадр 1', такт:6,  слой:'plast', sub:2, кадр:0 },
+    { имя:'Технико-экономическая оценка · кадр 2', такт:7,  слой:'plast', sub:2, кадр:1 },
+    { имя:'Технико-экономическая оценка · кадр 3', такт:8,  слой:'plast', sub:2, кадр:2 },
+    { имя:'ЦД скважины',                         такт:9,  слой:'skv' },
+    { имя:'ЦД добычи и наземной инфраструктуры', такт:10, слой:'naz' },
+    { имя:'Итог',                                такт:11 },
+  ];
+  // Страница считается по реальному состоянию экрана, а не по счётчику тактов:
+  // ручной клик по слою или ↩ у мини-пирога тоже должен подсвечивать верную кнопку.
+  const страницаСейчас = () => {
+    if(state.openId === 'plast') return panelState.sub === 2 ? 3 + teoImageIndex : 2;
+    if(state.openId === 'skv') return 6;
+    if(state.openId === 'naz') return 7;
+    return эффектыФиналВид ? 8 : 1;
+  };
+  const навигация = document.createElement('nav');
+  навигация.id = 'страницы';
+  навигация.setAttribute('aria-label', 'Страницы показа');
+  function обновитьНавигацию(){
+    if(state.closing) return;   // идёт закрытие слоя — итог ещё не определился
+    const н = страницаСейчас();
+    [...навигация.children].forEach((к, i) => {
+      к.classList.toggle('on', i + 1 === н);
+      if(i + 1 === н) к.setAttribute('aria-current', 'page'); else к.removeAttribute('aria-current');
+    });
+  }
+  async function перейтиНа(n){
+    if(идёт) return;
+    идёт = true;
+    try {
+      const ц = СТРАНИЦЫ[n - 1];
+      if(n === 1 || n === 8){
+        if(state.openId){
+          возвратБезФинала = (n === 1) ? 'начало' : null;   // на «Итог» закрытие само даёт финал
+          closeProject();
+          await пауза(ЗАКРЫТИЕ_МС + 150);
+        }
+        if(n === 1){
+          сброситьФинал();
+          if(window.__закрытьСправку) window.__закрытьСправку();
+          закрытьЭффекты();
+          state.locked = null; state.hover = null;
+          panelState.zone = null; panelState.sub = null;
+          refresh();
+        } else if(!эффектыФиналВид){   // пришли с начального экрана: слой не закрывался, финал ставим сами
+          закрытьЭффекты();
+          state.locked = null; state.hover = null;
+          refresh();
+          применитьФинал();
+        }
+      } else {
+        if(state.openId === null){
+          сброситьФинал();
+          if(window.__закрытьСправку) window.__закрытьСправку();
+          закрытьЭффекты();
+          if(ц.слой === 'plast'){ panelState.zone = 'plast'; panelState.sub = ц.sub; }
+          launchProject(ц.слой);
+          await пауза(MINI_TRANSITION_MS + 60);
+        } else if(state.openId !== ц.слой){
+          if(ц.слой === 'plast'){ panelState.zone = 'plast'; panelState.sub = ц.sub; }
+          switchProject(ц.слой);
+          await пауза(MINI_TRANSITION_MS + 60);
+        } else if(ц.слой === 'plast' && panelState.sub !== ц.sub){
+          panelState.sub = ц.sub;
+          openProject('plast');
+          await пауза(400);
+        }
+        if(ц.слой === 'plast' && ц.sub === 2){
+          await пауза(300);   // контент ТЭО подставляется с задержкой и открывается с первого кадра
+          showTeoImage(ц.кадр);
+          await пауза(720);
+        }
+      }
+      текущий = ц.такт;
+    } catch(err){ console.error('v5 страница', n, err); }
+    finally { идёт = false; обновитьНавигацию(); }
+  }
+  СТРАНИЦЫ.forEach((ц, i) => {
+    const к = document.createElement('button');
+    к.type = 'button';
+    к.textContent = String(i + 1);
+    к.title = ц.имя;
+    к.setAttribute('aria-label', `Страница ${i + 1}: ${ц.имя}`);
+    к.addEventListener('mousedown', e => e.preventDefault());   // фокус на кнопке заставил бы пробел нажимать её второй раз
+    к.addEventListener('click', e => { e.stopPropagation(); перейтиНа(i + 1); });
+    навигация.appendChild(к);
+  });
+  document.body.appendChild(навигация);
+  setInterval(обновитьНавигацию, 300);
+  обновитьНавигацию();
   addEventListener('keydown', async e => {
     const назад = e.code === 'ArrowLeft' || e.code === 'PageUp' || e.code === 'Backspace';
     if(!назад && e.code !== 'Space' && e.code !== 'ArrowRight' && e.code !== 'Enter' && e.code !== 'NumpadEnter' && e.code !== 'PageDown') return;
