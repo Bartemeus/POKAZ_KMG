@@ -21,6 +21,7 @@ Section "Показ" SEC_MAIN
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\POKAZ_KMG" "DisplayName" "Цифровая цепочка КМГ"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\POKAZ_KMG" "UninstallString" '$"$INSTDIR\Удалить показ.exe$"'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\POKAZ_KMG" "InstallLocation" "$INSTDIR"
+  IfSilent +2
   ExecShell "open" "$INSTDIR\Запуск показа.cmd"
 SectionEnd
 
