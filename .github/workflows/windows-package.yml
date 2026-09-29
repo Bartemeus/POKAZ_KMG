@@ -42,6 +42,9 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path 'инструменты/выход' | Out-Null
+          $script = 'инструменты/установщик.nsi'
+          $source = [System.IO.File]::ReadAllText((Resolve-Path $script))
+          [System.IO.File]::WriteAllText((Resolve-Path $script), $source, [System.Text.UTF8Encoding]::new($true))
           & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" 'инструменты/установщик.nsi'
           if ($LASTEXITCODE -ne 0) { throw "makensis завершился с кодом $LASTEXITCODE" }
           if (-not (Test-Path 'инструменты/выход/POKAZ_KMG_Setup.exe')) { throw 'Установщик не создан' }
