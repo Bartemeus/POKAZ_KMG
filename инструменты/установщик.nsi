@@ -3,7 +3,7 @@ Name "Цифровая цепочка КМГ"
 OutFile "выход\POKAZ_KMG_Setup.exe"
 InstallDir "$LOCALAPPDATA\Programs\POKAZ_KMG"
 RequestExecutionLevel user
-SetCompressor /SOLID lzma
+SetCompressor zlib
 ShowInstDetails show
 
 Page directory
