@@ -1,5 +1,4 @@
-/* TEO presents three live NUMEX states; other systems open on video.
-   The three states preload when TEO opens so slide changes do not flash blank. */
+/* TEO presents a standalone map and two NUMEX result tables. */
 (() => {
   const content = document.getElementById('content');
   const top12 = document.getElementById('top12');
@@ -13,7 +12,7 @@
     top12.classList.remove('is-visible');
   };
   const views = [...content.querySelectorAll('.content-view')]
-    .filter(view => view.querySelector('.content-tabs'));
+    .filter(view => view.querySelector('.content-tabs, .content-carousel'));
   const carousel = document.getElementById('content-teo-overview');
   const screens = [...carousel.querySelectorAll('.teo-screen')];
   const previous = document.getElementById('teo-prev');
@@ -24,7 +23,6 @@
 
   function showTeoScreen(index){
     screenIndex = Math.max(0, Math.min(screens.length - 1, index));
-    const teoVisible = content.classList.contains('is-visible') && carousel.closest('.content-view').classList.contains('is-current');
     screens.forEach((screen, i) => {
       const active = i === screenIndex;
       screen.classList.toggle('is-active', active);
@@ -33,7 +31,6 @@
       screen.setAttribute('aria-hidden', String(!active));
       screen.inert = !active;
       screen.tabIndex = active ? 0 : -1;
-      if(teoVisible && !screen.hasAttribute('src')) screen.src = screen.dataset.src;
     });
     count.textContent = `${screenIndex + 1} / ${screens.length}`;
     previous.disabled = screenIndex === 0;

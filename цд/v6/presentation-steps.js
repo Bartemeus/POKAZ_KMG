@@ -1,6 +1,5 @@
-/* v5's keyboard walk-through for a standalone presentation. The embedded
-   slide keeps its parent-controlled keys. TEO uses the same three still
-   frames as v5. Left, PageUp and Backspace undo the matching forward step. */
+/* Keyboard walk-through for a standalone presentation. TEO has two live
+   component slides. Left, PageUp and Backspace undo a forward step. */
 import { selection } from '../v4/state.js';
 import { openLayer, showLayerContent, switchLayer, closeLayer } from '../v4/transitions.js?v6-back-1';
 import { MINI } from '../v4/scene/layout.js';
@@ -28,7 +27,6 @@ if(!IN_FRAME){
       showTeoBeat(0);
     },
     async () => { showTeoBeat(1); await pause(720); },
-    async () => { showTeoBeat(2); await pause(720); },
     async () => { switchLayer('well'); await pause(MINI.transitionMs + 60); },
     async () => { switchLayer('surface'); await pause(MINI.transitionMs + 60); },
     async () => { closeLayer(); await pause(MINI.transitionMs + 150); },
@@ -51,12 +49,11 @@ if(!IN_FRAME){
       await pause(400);
     },
     async () => { showTeoBeat(0); await pause(720); },
-    async () => { showTeoBeat(1); await pause(720); },
     async () => {
       selection.zone = 'reservoir'; selection.step = 2;
       switchLayer('reservoir');
       await pause(400);
-      showTeoBeat(2);
+      showTeoBeat(1);
     },
     async () => { switchLayer('well'); await pause(400); },
     async () => {
