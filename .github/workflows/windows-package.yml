@@ -1,0 +1,63 @@
+name: Сборка Windows-пакета
+
+on:
+  push:
+    branches: [installer/windows]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - name: Забрать файлы показа
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Собрать переносимый пакет
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = 'инструменты/пакет'
+          New-Item -ItemType Directory -Force -Path $package | Out-Null
+          Get-ChildItem -File -Filter '*.html' | Copy-Item -Destination $package
+          Copy-Item -LiteralPath 'Запуск показа.cmd' -Destination $package
+          foreach ($folder in @('медиа', 'цд', 'аиан', 'вендор', 'remote')) {
+            Copy-Item -LiteralPath $folder -Destination $package -Recurse
+          }
+          if (-not (Test-Path -LiteralPath "$package/сцена_v2.html")) { throw 'Нет главной страницы' }
+          if (-not (Test-Path -LiteralPath "$package/медиа")) { throw 'Нет медиафайлов' }
+          Compress-Archive -Path "$package/*" -DestinationPath 'POKAZ_KMG_Portable.zip' -CompressionLevel Optimal
+
+      - name: Установить Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress --limit-output
+
+      - name: Собрать установщик
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:ПОКАЗ_ВЕРСИЯ = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '1.0.' + $env:GITHUB_RUN_NUMBER }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" 'инструменты/установщик.iss'
+          if ($LASTEXITCODE -ne 0) { throw "ISCC завершился с кодом $LASTEXITCODE" }
+          if (-not (Test-Path 'инструменты/выход/POKAZ_KMG_Setup.exe')) { throw 'Установщик не создан' }
+
+      - name: Опубликовать установщик
+        uses: actions/upload-artifact@v4
+        with:
+          name: POKAZ_KMG_Setup
+          path: инструменты/выход/POKAZ_KMG_Setup.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Опубликовать переносимый ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: POKAZ_KMG_Portable
+          path: POKAZ_KMG_Portable.zip
+          if-no-files-found: error
+          retention-days: 30
