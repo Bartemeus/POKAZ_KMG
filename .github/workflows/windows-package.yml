@@ -49,6 +49,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "makensis завершился с кодом $LASTEXITCODE" }
           if (-not (Test-Path 'инструменты/выход/POKAZ_KMG_Setup.exe')) { throw 'Установщик не создан' }
 
+      - name: Проверить тихую установку
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $target = Join-Path $env:RUNNER_TEMP 'POKAZ_KMG_test'
+          $process = Start-Process -FilePath (Resolve-Path 'инструменты/выход/POKAZ_KMG_Setup.exe') -ArgumentList @('/S', "/D=$target") -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Установка завершилась с кодом $($process.ExitCode)" }
+          foreach ($item in @('Запуск показа.cmd', 'сцена_v2.html', 'медиа', 'цд')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $target $item))) { throw "После установки нет: $item" }
+          }
+
       - name: Опубликовать установщик
         uses: actions/upload-artifact@v4
         with:
