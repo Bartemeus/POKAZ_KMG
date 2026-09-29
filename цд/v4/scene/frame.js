@@ -90,10 +90,10 @@ function stepPosition(layer, targetOffset, target, k, progress, easedProgress){
 /* A hitbox lives in `world`, not in the layer group, and doesn't inherit its
    offset or scale — mirrored by hand, otherwise the mini stack couldn't be
    clicked: the ray would look for the layer where it used to be. */
-function placeHitbox(layer, hitbox, centerY){
+function placeHitbox(layer, hitbox, centerY, objectScale = 1){
   const s = Math.max(layer.miniScale, 0.001);
   hitbox.position.set(layer.corner.x, centerY*s + layer.offset + layer.corner.y, layer.corner.z);
-  hitbox.scale.setScalar(s);
+  hitbox.scale.setScalar(s*objectScale);
   hitbox.rotation.y = layer.yaw;
 }
 
@@ -150,9 +150,12 @@ function stepWells(layer, t){
    a little. */
 function stepReservoir(layer, dt, t, k, pulse){
   const { openZone, selectedZone, hoveredZone, hoveredStep } = state;
-  const active = openZone ? hoveredZone === 'reservoir' : activeZone() === 'reservoir';
+  const clickOnly = document.body.dataset.version === 'v6';
+  const active = openZone ? (clickOnly ? openZone === 'reservoir' : hoveredZone === 'reservoir')
+                          : activeZone() === 'reservoir';
   const step = openZone
-    ? (hoveredZone === 'reservoir' ? hoveredStep : null)
+    ? (clickOnly && openZone === 'reservoir' ? selection.step
+       : hoveredZone === 'reservoir' ? hoveredStep : null)
     : (selectedZone === 'reservoir' ? selection.step : (hoveredZone === 'reservoir' ? hoveredStep : null));
 
   /* Ranking columns come with the TEO slab (step 2). Not in the mini stack —
@@ -171,18 +174,30 @@ function stepReservoir(layer, dt, t, k, pulse){
 
   layer.slabs.forEach((slab, index) => {
     let targetOffset = 0;
-    if(active){
+    let targetScale;
+    if(clickOnly){
+      // v5 keeps all three reservoir steps apart even before selection.
+      const mini = Boolean(openZone);
+      const base = (index === 0 ? -14 : index === 2 ? 14 : 0)
+        * (active ? (mini ? 0.9 : 1.6) : 1);
+      targetOffset = base;
+      if(active && step !== null && index !== step){
+        targetOffset += (index < step ? -1 : 1) * (mini ? 18 : 40) * Math.abs(index - step);
+      }
+      targetScale = !active ? 1.06 : step === null ? 1.14
+                  : index === step ? (mini ? 1.18 : 1.32) : 0.94;
+    } else if(active){
       const base = index === 0 ? -8 : index === 2 ? 8 : 0;   // 0 — bottom, 2 — top
       targetOffset = step === null || index === step ? base
                    : base + (index < step ? -1 : 1) * 34 * Math.abs(index - step);
     }
     slab.offset += (targetOffset - slab.offset)*k;
-    const targetScale = !active || step === null ? 1 : (index === step ? 1.22 : 0.93);
+    if(!clickOnly) targetScale = !active || step === null ? 1 : (index === step ? 1.22 : 0.93);
     slab.scale += (targetScale - slab.scale)*k;
     const center = (slab.top + slab.bottom)/2;
     slab.wrap.scale.setScalar(slab.scale);
     slab.wrap.position.y = slab.offset + center*(1 - slab.scale);   // grows from its own centre
-    placeHitbox(layer, slab.hitbox, center + slab.offset);
+    placeHitbox(layer, slab.hitbox, center + slab.offset, clickOnly ? slab.scale : 1);
 
     const targetDigitized = active ? (step === null || step === index ? 1 : 0.4) : 0;
     slab.digitized += (targetDigitized - slab.digitized)*k;

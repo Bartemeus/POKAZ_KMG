@@ -31,6 +31,7 @@ function startStackFlight(){
 export function openLayer(zoneId, isSwitch = false){
   if(state.closingZone) return;
   if(state.openZone && !isSwitch) return;
+  if(document.body.dataset.version === 'v6') window.__hideTop12?.();
   // leaving the reservoir — give back its previous step choice
   if(isSwitch && state.openZone === 'reservoir' && state.stepBeforeOpen !== undefined){
     selection.step = state.stepBeforeOpen;
@@ -104,6 +105,7 @@ function finishClosing(){
   controls.autoRotate = true;
   controls.enabled = true;
   refresh();
-  showAssetCard();   // back in the initial frame: the first-asset card stands on the right again
+  if(document.body.dataset.version === 'v6') window.__openTop12?.();
+  else showAssetCard();
   showFinalKeyEffects();
 }

@@ -18,7 +18,11 @@ export function captureCamera(){
   hold.azimuth = cameraAzimuth();
 }
 
-export function holdCamera(){
+export function holdCamera(k){
+  // v5 presents the mini stack square-on, independent of the opening angle.
+  if(state.openZone && document.body.dataset.version === 'v6'){
+    hold.polar += (Math.PI/2 - hold.polar)*k;
+  }
   const { azimuth, radius, polar } = hold;
   const horizontal = radius * Math.sin(polar);
   camera.position.set(

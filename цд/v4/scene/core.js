@@ -7,7 +7,9 @@ import { SHORT_SHOW } from '../params.js';
 export const scene = new THREE.Scene();
 
 export const camera = new THREE.PerspectiveCamera(36, innerWidth/innerHeight, 1, 4000);
-camera.position.set(385, 278, 385);   // with margin, so the stack fits the corridor between panels
+// v6 inherits v5's near-front view; its larger scene needs a little more distance.
+const v6Camera = document.body.dataset.version === 'v6';
+camera.position.set(v6Camera ? 450 : 385, v6Camera ? 18 : 278, v6Camera ? 450 : 385);
 /* 18.09: in the short show the stack is spread and taller — camera farther
    back, otherwise the top and bottom leave the frame. */
 if(SHORT_SHOW) camera.position.multiplyScalar(1.22);
@@ -34,7 +36,7 @@ controls.enablePan = false;
 controls.minDistance = 240;
 controls.maxDistance = 760;
 controls.minPolarAngle = 0.5;
-controls.maxPolarAngle = 1.35;
+controls.maxPolarAngle = v6Camera ? 1.50 : 1.35;
 controls.target.set(0, -40, 0);
 /* One rotation speed for every state: it used to be 1.7 idle and 0.55 with a
    zone selected — the model visibly braked on hover. */

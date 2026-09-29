@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { scene, camera, renderer, controls, world, syncPixelRatio } from './scene/core.js';
 import { buildStack, layers, hitboxes } from './scene/build.js';
-import { stepLayers, stepSurfaceAccents } from './scene/frame.js';
+import { stepLayers, stepSurfaceAccents } from './scene/frame.js?v6-reservoir-pick-1';
 import { holdCamera, stepFraming, updateFraming } from './scene/camera-rig.js';
 import { state, refresh } from './state.js';
 import { EMBEDDED } from './params.js';
@@ -12,7 +12,7 @@ import { bindStack, updateNavLine } from './ui/stack.js';
 import { positionKeyEffects } from './ui/key-effects.js';
 import { initAssetCard } from './ui/asset-card.js';
 import { updateTeoLabels, updateDrillLabel, updateLateralLabel, updateSurfaceLabel, debugInfo } from './ui/labels.js';
-import { bindInput, trackHover } from './input.js';
+import { bindInput, trackHover } from './input.js?v6-reservoir-pick-1';
 import { applyDebugEntry } from './debug-entry.js';
 
 buildStack()
@@ -24,8 +24,10 @@ buildStack()
       const frame = document.getElementById('content-production-monitoring');
       if(!frame.hasAttribute('src')) frame.src = frame.dataset.src;
     };
-    if('requestIdleCallback' in window) requestIdleCallback(warmMonitor, {timeout:2000});
-    else setTimeout(warmMonitor, 500);
+    if(document.body.dataset.version !== 'v6'){
+      if('requestIdleCallback' in window) requestIdleCallback(warmMonitor, {timeout:2000});
+      else setTimeout(warmMonitor, 500);
+    }
   })
   .catch(error => { document.querySelector('#loader .message').textContent = 'Ошибка: ' + error.message; });
 
@@ -74,7 +76,7 @@ function animate(){
   trackHover();
   const { progress, easedProgress } = stepLayers(dt, t, k);
   // with content open and while closing, the camera stays where the click found it
-  if(state.openZone || state.closingZone) holdCamera(); else controls.update();
+  if(state.openZone || state.closingZone) holdCamera(k); else controls.update();
   stepFraming(k, progress, easedProgress);
   renderer.render(scene, camera);
 

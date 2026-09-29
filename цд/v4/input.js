@@ -11,6 +11,7 @@ import { hideAssetCard } from './ui/asset-card.js';
 import { updateCursorChip } from './ui/cursor-chip.js';
 
 const raycaster = new THREE.Raycaster();
+const clickOnly = document.body.dataset.version === 'v6';
 const pointer = new THREE.Vector2(-2, -2);   // off-screen until the mouse moves
 let mouse = [0, 0];
 
@@ -32,13 +33,14 @@ function pick(targets){
    doesn't move with hover, so live hitboxes are safe and more precise. */
 export function trackHover(){
   let hit = { zone:null, step:null };
-  const targets = state.selectedZone ? hitboxes : restHitboxes;
+  // v6 has no hover-driven movement, so the live boxes always match the slabs.
+  const targets = clickOnly || state.selectedZone ? hitboxes : restHitboxes;
   if(Math.abs(pointer.x) <= 1 && Math.abs(pointer.y) <= 1 && targets.length) hit = pick(targets);
 
   /* `hoverFrozen` is set only by the debug `?наведение=1` entry: there is no
      mouse there, raycasting finds nothing every frame and would reset the
      hover. Never raised during a show. */
-  if(!state.hoverFrozen && !state.closingZone && (hit.zone !== state.hoveredZone || hit.step !== state.hoveredStep)){
+  if(!clickOnly && !state.hoverFrozen && !state.closingZone && (hit.zone !== state.hoveredZone || hit.step !== state.hoveredStep)){
     const overUi = document.querySelector('#stack:hover, #panel:hover, #content:hover');
     if(overUi){
       if(state.openZone && state.hoveredZone !== null){ state.hoveredZone = null; state.hoveredStep = null; refresh(); }
@@ -50,7 +52,7 @@ export function trackHover(){
   const clickable = hit.zone && !isGgdm(hit.zone, hit.step) && (
     !state.openZone || hit.zone !== state.openZone || (hit.zone === 'reservoir' && hit.step !== null));
   renderer.domElement.style.cursor = clickable ? 'pointer' : '';
-  updateCursorChip(hit, clickable, mouse);
+  if(!clickOnly) updateCursorChip(hit, clickable, mouse);
 }
 
 function onCanvasClick(event){
@@ -69,10 +71,20 @@ function onCanvasClick(event){
     else if(hit.zone === 'reservoir' && hit.step !== null) showLayerContent('reservoir');
     return;
   }
-  if(state.hoveredZone){
-    if(isGgdm(state.hoveredZone, state.hoveredStep)) return;   // GGDM stays a visual layer only
-    if(state.hoveredZone === 'reservoir') selection.step = state.hoveredStep;
-    openLayer(state.hoveredZone);
+  // v6 follows v5: hovering only changes the pointer. The click makes its own
+  // raycast, so no previous pointermove is required for touch or automation.
+  if(clickOnly){
+    pointer.set((event.clientX/innerWidth)*2 - 1, -(event.clientY/innerHeight)*2 + 1);
+  }
+  const hit = clickOnly ? pick(hitboxes)
+                        : {zone:state.hoveredZone, step:state.hoveredStep};
+  if(hit.zone){
+    if(isGgdm(hit.zone, hit.step)) return;   // GGDM stays a visual layer only
+    if(hit.zone === 'reservoir'){
+      selection.zone = 'reservoir';
+      selection.step = hit.step;
+    }
+    openLayer(hit.zone);
   } else if(state.selectedZone){
     state.selectedZone = null;
     refresh();

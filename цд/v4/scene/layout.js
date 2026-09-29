@@ -78,10 +78,10 @@ function slabSpread(layer){
    stack ended up under the panel or off-frame. Everything is measured from the
    window height because the model on screen scales with it too. */
 export const MINI = {
-  scale: 0.42,
-  heightRatio: 0.56,
+  scale: document.body.dataset.version === 'v6' ? 0.38 : 0.42,
+  heightRatio: document.body.dataset.version === 'v6' ? 0.44 : 0.56,
   aspect: 0.90,          // spot width to height
-  margin: 34,            // from the window edge, px
+  margin: document.body.dataset.version === 'v6' ? 52 : 34,
   transitionMs: 900,     // flight into the corner and back
 };
 // the back button (#mini-reset) sits right of the mini stack and needs its size

@@ -6,6 +6,7 @@ import { state, selection } from '../state.js';
 const contentEl = document.getElementById('content');
 const videoEl = document.getElementById('content-video');
 const tumarVideoEl = document.getElementById('content-tumar');
+const hasViewTabs = document.body.dataset.version === 'v6';
 const views = [...contentEl.querySelectorAll('.content-view')];
 const SWAP_MS = 260;
 let swapTimer = null;
@@ -37,7 +38,7 @@ function fill(){
   for(const view of views){
     const iframe = view.querySelector('iframe');
     if(!iframe) continue;
-    if(view === current && isApp && !iframe.hasAttribute('src')) iframe.src = iframe.dataset.src;
+    if(view === current && isApp && !hasViewTabs && !iframe.hasAttribute('src')) iframe.src = iframe.dataset.src;
   }
   const file = current?.dataset.video;
   if(file){

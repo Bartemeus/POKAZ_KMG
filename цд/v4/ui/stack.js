@@ -5,6 +5,7 @@ import { state, selection, activeZone, refresh } from '../state.js';
 import { switchLayer } from '../transitions.js';
 
 const stackEl = document.getElementById('stack');
+const clickOnly = document.body.dataset.version === 'v6';
 const items = [...stackEl.querySelectorAll('.stack-item')];
 
 /* data-zone / data-step of a stack button; step is null for a zone button. */
@@ -23,8 +24,10 @@ export function bindStack(){
   for(const item of items){
     const zoneId = zoneOf(item), step = stepOf(item);
     if(step === null){
-      item.addEventListener('mouseenter', () => { state.hoveredZone = zoneId; state.hoveredStep = null; refresh(); });
-      item.addEventListener('mouseleave', () => { state.hoveredZone = null; refresh(); });
+      if(!clickOnly){
+        item.addEventListener('mouseenter', () => { state.hoveredZone = zoneId; state.hoveredStep = null; refresh(); });
+        item.addEventListener('mouseleave', () => { state.hoveredZone = null; refresh(); });
+      }
       item.addEventListener('click', () => {
         if(state.closingZone) return;
         if(state.openZone){ switchLayer(zoneId); return; }
@@ -36,8 +39,10 @@ export function bindStack(){
         refresh();
       });
     } else {
-      item.addEventListener('mouseenter', () => { state.hoveredZone = zoneId; state.hoveredStep = step; refresh(); });
-      item.addEventListener('mouseleave', () => { state.hoveredStep = null; refresh(); });
+      if(!clickOnly){
+        item.addEventListener('mouseenter', () => { state.hoveredZone = zoneId; state.hoveredStep = step; refresh(); });
+        item.addEventListener('mouseleave', () => { state.hoveredStep = null; refresh(); });
+      }
       item.addEventListener('click', () => {
         if(state.closingZone) return;
         if(isGgdm(zoneId, step)) return;   // same rule as clicking the slab itself
