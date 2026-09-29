@@ -1,6 +1,6 @@
 Unicode true
 Name "Цифровая цепочка КМГ"
-OutFile "инструменты\выход\POKAZ_KMG_Setup.exe"
+OutFile "выход\POKAZ_KMG_Setup.exe"
 InstallDir "$LOCALAPPDATA\Programs\POKAZ_KMG"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
@@ -13,7 +13,7 @@ UninstPage instfiles
 
 Section "Показ" SEC_MAIN
   SetOutPath "$INSTDIR"
-  File /r "инструменты\пакет\*.*"
+  File /r "пакет\*.*"
   WriteUninstaller "$INSTDIR\Удалить показ.exe"
   CreateDirectory "$SMPROGRAMS\Цифровая цепочка КМГ"
   CreateShortcut "$SMPROGRAMS\Цифровая цепочка КМГ\Запустить показ.lnk" "$INSTDIR\Запуск показа.cmd"
