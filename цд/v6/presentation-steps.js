@@ -1,7 +1,6 @@
 /* v5's keyboard walk-through for a standalone presentation. The embedded
-   slide keeps its parent-controlled keys. The TEO video keeps the three beats
-   of v5's still frames: start, middle and end. Left, PageUp and Backspace undo
-   the matching forward step without replaying the whole presentation. */
+   slide keeps its parent-controlled keys. TEO uses the same three still
+   frames as v5. Left, PageUp and Backspace undo the matching forward step. */
 import { selection } from '../v4/state.js';
 import { openLayer, showLayerContent, switchLayer, closeLayer } from '../v4/transitions.js?v6-back-1';
 import { MINI } from '../v4/scene/layout.js';
@@ -11,16 +10,7 @@ import { showInitialKeyEffects } from '../v4/ui/key-effects.js?v6-back-1';
 
 if(!IN_FRAME){
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-  const teoVideo = document.getElementById('content-teo-video');
-  function showTeoBeat(beat){
-    const seek = () => {
-      if(Number.isFinite(teoVideo.duration) && teoVideo.duration > 0){
-        teoVideo.currentTime = Math.min(teoVideo.duration - 0.1, teoVideo.duration * beat / 3);
-      }
-    };
-    if(teoVideo.readyState) seek();
-    else teoVideo.addEventListener('loadedmetadata', seek, { once:true });
-  }
+  const showTeoBeat = beat => window.__teoCarousel?.show(beat);
   const steps = [
     async () => document.querySelector('#stack .stack-item[data-zone="reservoir"]:not(.step)').click(),
     async () => document.querySelector('#stack .stack-item[data-zone="well"]:not(.step)').click(),
@@ -78,17 +68,29 @@ if(!IN_FRAME){
   ];
   let current = 0;
   let running = false;
+  const teoOpen = () => document.querySelector('#content.is-visible .content-view.is-current[data-zone="reservoir"][data-step="2"]');
+  const syncTeoStep = () => { if(teoOpen()) current = 6 + (window.__teoCarousel?.index ?? 0); };
+  async function forward(){
+    if(running || current >= steps.length) return;
+    running = true;
+    try { await steps[current++](); }
+    catch(error){ console.error('v6 presentation step', current, error); }
+    finally { running = false; }
+  }
+  window.__advancePresentation = () => { syncTeoStep(); return forward(); };
   addEventListener('keydown', async event => {
     const backwards = ['ArrowLeft','PageUp','Backspace'].includes(event.code);
     if(!backwards && !['Space','ArrowRight','Enter','NumpadEnter','PageDown'].includes(event.code)) return;
     const target = event.target;
     if(target?.closest?.('video, iframe, input, textarea, select, [role="tab"]') || target?.isContentEditable) return;
     event.preventDefault();
-    if(running || event.repeat || (backwards ? current <= 0 : current >= steps.length)) return;
+    if(running || event.repeat) return;
+    syncTeoStep();
+    if(!backwards){ await forward(); return; }
+    if(current <= 0) return;
     running = true;
     try {
-      if(backwards) await back[--current]();
-      else await steps[current++]();
+      await back[--current]();
     } catch(error){
       console.error('v6 presentation step', current, error);
     } finally {

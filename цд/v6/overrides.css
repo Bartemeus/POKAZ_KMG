@@ -44,7 +44,7 @@ body.is-final #asset-toggle { display: none; }
 #top12 .companies { font-size: 15.5px; color: #7c8da6; line-height: 1.4; margin-bottom: 6px; }
 #top12 .fields { font-size: 18px; color: #dce7f5; line-height: 1.5; padding: 8px 12px; border-left: 2px solid rgba(79,227,255,.35); background: rgba(79,227,255,.04); border-radius: 0 8px 8px 0; }
 
-/* All four systems use the same video/live layout. */
+/* All systems share the same content layout; TEO opens with its v5 images. */
 #content .content-view-app .content-heading {
   display: flex;
   align-items: center;
@@ -89,6 +89,7 @@ body.is-final #asset-toggle { display: none; }
 }
 
 #content .content-view-app .content-media,
+#content .content-view-app .content-carousel,
 #content .content-view-app .content-live {
   width: 100%;
   height: 0;
@@ -104,7 +105,56 @@ body.is-final #asset-toggle { display: none; }
 
 #content .content-view-app .content-media { object-fit: contain; }
 #content .content-view-app[data-view="video"] .content-media,
+#content .content-view-app[data-view="overview"] .content-carousel,
 #content .content-view-app[data-view="live"] .content-live { display: block; }
+
+#content .content-carousel { position: relative; overflow: hidden; }
+#content .content-carousel img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transform: translateX(18px) scale(1.025);
+  transition: opacity .7s ease, transform .8s cubic-bezier(.2,.8,.2,1);
+}
+#content .content-carousel img.is-active { opacity: 1; transform: translateX(0) scale(1); }
+#content .content-carousel button {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 56px;
+  border: 1px solid var(--line);
+  background: rgba(5,10,20,.76);
+  color: var(--txt);
+  font-size: 28px;
+  cursor: pointer;
+}
+#content .content-carousel button:hover,
+#content .content-carousel button:focus-visible {
+  background: rgba(10,30,45,.94);
+  color: var(--cyan);
+  border-color: var(--cyan);
+  outline: none;
+}
+#content .content-carousel button:disabled { opacity: .3; cursor: default; }
+#teo-prev { left: 12px; }
+#teo-next { right: 12px; }
+#teo-count {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  background: rgba(5,10,20,.78);
+  border: 1px solid var(--line);
+  color: var(--txt);
+  font: 15px var(--mono);
+  letter-spacing: .15em;
+}
 
 @media (max-width: 1100px) {
   #content.is-app { padding-left: 32px; padding-right: 32px; }
