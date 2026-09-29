@@ -585,9 +585,9 @@ body.финал #pilot{display:none}
   <div id="pc-claim"></div>
   <video id="pc-video" controls autoplay muted loop playsinline preload="auto"></video>
   <div id="pc-carousel" role="region" aria-label="Кадры технико-экономической оценки">
-    <img src="нюмекс1.png" alt="Технико-экономическая оценка — кадр 1" class="active">
-    <img src="нюмекс4.png" alt="Технико-экономическая оценка — кадр 2">
-    <img src="нюмекс6.png" alt="Технико-экономическая оценка — кадр 3">
+    <img src="нюмекс2.png" alt="Технико-экономическая оценка — кадр 1" class="active">
+    <img src="нюмекс1.png" alt="Технико-экономическая оценка — кадр 2">
+    <img src="нюмекс4.png" alt="Технико-экономическая оценка — кадр 3">
     <button id="pc-carousel-prev" type="button" aria-label="Предыдущий кадр">‹</button>
     <button id="pc-carousel-next" type="button" aria-label="Следующий кадр">›</button>
     <span id="pc-carousel-count" aria-live="polite">1 / 3</span>
@@ -601,7 +601,7 @@ body.финал #pilot{display:none}
      поэтому все динамически подставляемые ролики начинают грузиться вместе
      со страницей. TUMAR уже грузится своим видимым #pc-tumar. -->
 <div id="video-preloaders" aria-hidden="true">
-  <video src="NUMEX_optimize_cut.mp4" preload="auto" muted playsinline></video>
+  <video src="numex_opt.mp4" preload="auto" muted playsinline></video>
   <video src="drillspot_cut.mp4" preload="auto" muted playsinline></video>
   <video src="im.mp4" preload="auto" muted playsinline></video>
 </div>
@@ -2037,7 +2037,7 @@ const PROJECT_KICKERS = { plast:'ЦД пласта', skv:'ЦД скважины'
    скважина оставлены под прежними названиями. */
 /* ТЭО показывает три расчётных кадра вместо видеозаписи. */
 const RESERVOIR_CONTENT = {
-  1:{ file:'NUMEX_optimize_cut.mp4', title:'Цифровой двойник пласта' },
+  1:{ file:'numex_opt.mp4', title:'Цифровой двойник пласта' },
   2:{ images:true, title:'Технико-экономическая оценка' }
 };
 const ZONE_VIDEOS = {
