@@ -4,10 +4,13 @@ const effectsEl = document.getElementById('key-effects');
 const stackEl = document.getElementById('stack');
 const sets = [...effectsEl.querySelectorAll('.columns[data-state]')];
 
-export function showFinalKeyEffects(){
-  for(const set of sets) set.classList.toggle('is-current', set.dataset.state === 'final');
+function showKeyEffects(view){
+  for(const set of sets) set.classList.toggle('is-current', set.dataset.state === view);
   requestAnimationFrame(positionKeyEffects);
 }
+
+export const showFinalKeyEffects = () => showKeyEffects('final');
+export const showInitialKeyEffects = () => showKeyEffects('initial');
 
 export function setKeyEffectsDocked(docked){ effectsEl.classList.toggle('is-docked', docked); }
 

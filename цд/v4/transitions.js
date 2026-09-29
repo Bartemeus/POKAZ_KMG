@@ -17,11 +17,12 @@ import { startFlight, MINI } from './scene/layout.js';
 import { captureCamera, captureFraming } from './scene/camera-rig.js';
 import { showContent, hideContent } from './ui/content.js?v=media-start-1';
 import { hideAssetCard, showAssetCard } from './ui/asset-card.js';
-import { showFinalKeyEffects } from './ui/key-effects.js';
+import { showFinalKeyEffects, showInitialKeyEffects } from './ui/key-effects.js?v6-back-1';
 import { setPanelLayerOpen } from './ui/panel.js';
 
 const CLOSE_MS = MINI.transitionMs + 100;   // until idle (auto-rotation) returns
 let closeTimer = null;
+let restoreFirstAssetOnClose = false;
 
 function startStackFlight(){
   startFlight(layers);
@@ -81,8 +82,9 @@ export function switchLayer(zoneId){
 /* The flight back starts from wherever the layers are now (startFlight
    snapshot), so closing mid-opening doesn't jerk. The camera is not moved:
    it didn't move on opening, there is nowhere to return it. */
-export function closeLayer(){
+export function closeLayer({ restoreFirstAsset = false } = {}){
   if(!state.openZone) return;
+  restoreFirstAssetOnClose = restoreFirstAsset;
   const zoneId = state.openZone;
   if(zoneId === 'reservoir' && state.stepBeforeOpen !== undefined) selection.step = state.stepBeforeOpen;
   hideContent();
@@ -105,7 +107,14 @@ function finishClosing(){
   controls.autoRotate = true;
   controls.enabled = true;
   refresh();
-  if(document.body.dataset.version === 'v6') window.__openTop12?.();
-  else showAssetCard();
-  showFinalKeyEffects();
+  if(restoreFirstAssetOnClose){
+    restoreFirstAssetOnClose = false;
+    if(document.body.dataset.version === 'v6') window.__resetFinal?.();
+    showAssetCard();
+    showInitialKeyEffects();
+  } else {
+    if(document.body.dataset.version === 'v6') window.__openTop12?.();
+    else showAssetCard();
+    showFinalKeyEffects();
+  }
 }

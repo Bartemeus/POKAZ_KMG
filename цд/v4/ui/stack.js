@@ -2,7 +2,7 @@
    binds them to the state and toggles is-hot / is-expanded / is-visible. */
 import { isGgdm } from '../data/zones.js';
 import { state, selection, activeZone, refresh } from '../state.js';
-import { switchLayer } from '../transitions.js';
+import { switchLayer } from '../transitions.js?v6-back-1';
 
 const stackEl = document.getElementById('stack');
 const clickOnly = document.body.dataset.version === 'v6';

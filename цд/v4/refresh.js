@@ -3,7 +3,7 @@
 import { state, onRefresh } from './state.js';
 import { updateStack, updateNavLine } from './ui/stack.js';
 import { hidePanel, setPanelReplacesStack } from './ui/panel.js';
-import { setKeyEffectsDocked, positionKeyEffects } from './ui/key-effects.js';
+import { setKeyEffectsDocked, positionKeyEffects } from './ui/key-effects.js?v6-back-1';
 import { updateFraming } from './scene/camera-rig.js';
 
 const miniResetEl = document.getElementById('mini-reset');

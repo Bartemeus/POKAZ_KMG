@@ -158,12 +158,14 @@ function stepReservoir(layer, dt, t, k, pulse){
        : hoveredZone === 'reservoir' ? hoveredStep : null)
     : (selectedZone === 'reservoir' ? selection.step : (hoveredZone === 'reservoir' ? hoveredStep : null));
 
-  /* Ranking columns come with the TEO slab (step 2). Not in the mini stack —
-     without labels they are just sticks there. Hidden columns leave the render
+  /* In v6 the ranking columns belong to the selected reservoir, as in v5.
+     Keep them out of the mini stack, where their labels are hidden.
+     Hidden columns leave the render
      entirely: otherwise they still take part in the transparency pass and
      smear the neighbouring layers. */
   const columns = layer.columns;
-  columns.visibility += ((step === 2 && !openZone ? 1 : 0) - columns.visibility)*k;
+  const showColumns = !openZone && (clickOnly ? selectedZone === 'reservoir' : step === 2);
+  columns.visibility += ((showColumns ? 1 : 0) - columns.visibility)*k;
   const visible = columns.visibility > 0.02;
   for(const node of columns.nodes) node.visible = visible;
   if(visible) for(const material of columns.materials){

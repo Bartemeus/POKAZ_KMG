@@ -8,6 +8,10 @@
     top12.classList.add('is-visible');
   };
   window.__hideTop12 = () => top12.classList.remove('is-visible');
+  window.__resetFinal = () => {
+    document.body.classList.remove('is-final');
+    top12.classList.remove('is-visible');
+  };
   const views = [...content.querySelectorAll('.content-view')]
     .filter(view => view.querySelector('.content-tabs'));
 

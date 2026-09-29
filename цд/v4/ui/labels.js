@@ -33,8 +33,10 @@ function linkTeoTags(anchors){
 export function updateTeoLabels(){
   const anchors = layers.reservoir?.columns.anchors ?? [];
   const show = anchors.length && !state.openZone && (
-    (state.selectedZone === 'reservoir' && selection.step === 2) ||
-    (state.hoveredZone === 'reservoir' && state.hoveredStep === 2));
+    document.body.dataset.version === 'v6'
+      ? state.selectedZone === 'reservoir'
+      : (state.selectedZone === 'reservoir' && selection.step === 2) ||
+        (state.hoveredZone === 'reservoir' && state.hoveredStep === 2));
   teoEl.classList.toggle('is-visible', Boolean(show));
   if(!show) return;
   if(!teoTags[0].anchor) linkTeoTags(anchors);

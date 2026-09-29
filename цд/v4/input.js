@@ -6,7 +6,7 @@ import { camera, renderer } from './scene/core.js';
 import { hitboxes, restHitboxes } from './scene/build.js';
 import { isGgdm } from './data/zones.js';
 import { IN_FRAME } from './params.js';
-import { openLayer, switchLayer, showLayerContent, closeLayer } from './transitions.js';
+import { openLayer, switchLayer, showLayerContent, closeLayer } from './transitions.js?v6-back-1';
 import { hideAssetCard } from './ui/asset-card.js';
 import { updateCursorChip } from './ui/cursor-chip.js';
 

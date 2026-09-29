@@ -3,16 +3,16 @@
 import * as THREE from 'three';
 import { scene, camera, renderer, controls, world, syncPixelRatio } from './scene/core.js';
 import { buildStack, layers, hitboxes } from './scene/build.js';
-import { stepLayers, stepSurfaceAccents } from './scene/frame.js?v6-reservoir-pick-1';
+import { stepLayers, stepSurfaceAccents } from './scene/frame.js?v6-teo-1';
 import { holdCamera, stepFraming, updateFraming } from './scene/camera-rig.js';
 import { state, refresh } from './state.js';
 import { EMBEDDED } from './params.js';
-import './refresh.js';
-import { bindStack, updateNavLine } from './ui/stack.js';
-import { positionKeyEffects } from './ui/key-effects.js';
+import './refresh.js?v6-back-1';
+import { bindStack, updateNavLine } from './ui/stack.js?v6-back-1';
+import { positionKeyEffects } from './ui/key-effects.js?v6-back-1';
 import { initAssetCard } from './ui/asset-card.js';
-import { updateTeoLabels, updateDrillLabel, updateLateralLabel, updateSurfaceLabel, debugInfo } from './ui/labels.js';
-import { bindInput, trackHover } from './input.js?v6-reservoir-pick-1';
+import { updateTeoLabels, updateDrillLabel, updateLateralLabel, updateSurfaceLabel, debugInfo } from './ui/labels.js?v6-teo-1';
+import { bindInput, trackHover } from './input.js?v6-back-1';
 import { applyDebugEntry } from './debug-entry.js';
 
 buildStack()
