@@ -78,6 +78,8 @@
   }
   function applyProjectParameters() {
     const data = active.development;
+    const cores = document.querySelector('[name="ядра"]');
+    if (cores) cores.value = active.variant === 2 ? '10' : '15';
     const values = {};
     const mapping = { density: 'плотность', ratio: 'отношение', spacingX: 'a0', spacingY: 'b0', rowOffset: 'смещение', stressAngle: 'стресс', fractureAngle: 'трещины', deformation: 'деформация', minimumDistance: 'расстояние', systemAngle: 'направление', width: 'ширина', height: 'высота', centerX: 'dx', centerY: 'dy', radius: 'радиус' };
     for (const [key, field] of Object.entries(mapping)) values[`параметр-${field}`] = String(data[key]);

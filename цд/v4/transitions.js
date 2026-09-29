@@ -15,7 +15,7 @@ import { controls } from './scene/core.js';
 import { layers } from './scene/build.js';
 import { startFlight, MINI } from './scene/layout.js';
 import { captureCamera, captureFraming } from './scene/camera-rig.js';
-import { showContent, hideContent } from './ui/content.js?v=tumar-1';
+import { showContent, hideContent } from './ui/content.js?v=media-start-1';
 import { hideAssetCard, showAssetCard } from './ui/asset-card.js';
 import { showFinalKeyEffects } from './ui/key-effects.js';
 import { setPanelLayerOpen } from './ui/panel.js';

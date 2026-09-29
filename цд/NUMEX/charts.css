@@ -45,6 +45,15 @@
 .nc-separator{border:0;border-top:1px solid #aaa;margin:7px 0}
 .nc-option-row{display:flex;align-items:center;gap:8px;margin:6px 0}.nc-option-row select{min-width:76px}.nc-option-row label{display:flex;align-items:center;gap:8px}.nc-option-row fieldset{padding:5px 8px;display:flex;gap:8px}.nc-option-row fieldset label{gap:0}
 .nc-scenario-variants{height:155px;flex:none}.nc-scenario-summary{height:130px;flex:none}.nc-scenario-graphs{min-height:230px;flex:1;background:#fff}
+.nc-captured-scenario .nc-scenario-variants{height:170px}
+.nc-captured-scenario .nc-scenario-variants .nc-table{width:360px;table-layout:fixed}
+.nc-captured-scenario-two .nc-scenario-variants .nc-table{width:530px}
+.nc-captured-scenario .nc-scenario-variants .nc-table th:first-child,
+.nc-captured-scenario .nc-scenario-variants .nc-table td:first-child{width:22px}
+.nc-captured-scenario .nc-scenario-summary{height:174px}
+.nc-captured-scenario .nc-scenario-summary .nc-table{font-size:10px}
+.nc-captured-scenario .nc-scenario-summary .nc-table th,
+.nc-captured-scenario .nc-scenario-summary .nc-table td{height:20px;padding:1px 2px}
 .nc-directory-row{display:flex;align-items:center;justify-content:space-between;margin:1px 0 8px;gap:8px}.nc-directory-row button{width:49%}.nc-directory{display:block;width:100%;margin:0 0 8px}.nc-directory-row label{display:flex;align-items:center;white-space:nowrap}.nc-wide-button{width:100%;margin-bottom:6px}
 .nc-wells{height:220px;margin-bottom:5px}.nc-variants{height:215px}.nc-current{margin:8px 0}.nc-well-producer{color:#a32232}.nc-well-injector{color:#1616eb}
 .nc-tabs{display:flex;align-items:end;min-height:25px;overflow-x:auto;scrollbar-width:none;flex:none}

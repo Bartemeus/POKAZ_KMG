@@ -3,9 +3,28 @@
 
 (function() {
     'use strict';
+    var focusWells = new URLSearchParams(window.location.search).get('focus') === 'wells';
 
     // --- Dynamic Height & Zoom Auto-Fit ---
     function updateZoom() {
+        if (focusWells) {
+            var table = document.getElementById('normativeTable');
+            if (!table) return;
+            var viewWidth = window.innerWidth;
+            var viewHeight = window.innerHeight;
+            var scale = Math.min(viewWidth / table.offsetWidth, viewHeight / table.offsetHeight);
+            var left = (viewWidth - table.offsetWidth * scale) / 2 - table.offsetLeft * scale;
+            var top = (viewHeight - table.offsetHeight * scale) / 2 - table.offsetTop * scale;
+            $('.dashboard').css({
+                transform: 'translate(' + left + 'px, ' + top + 'px) scale(' + scale + ')',
+                'transform-origin': 'top left',
+                width: '7680px',
+                height: '2160px'
+            });
+            document.body.style.setProperty('width', viewWidth + 'px', 'important');
+            document.body.style.setProperty('height', viewHeight + 'px', 'important');
+            return;
+        }
         var targetHeight = 2160;
         var targetWidth = 7680;
         var vh = window.innerHeight || document.documentElement.clientHeight;

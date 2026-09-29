@@ -2,14 +2,72 @@
   'use strict';
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const panels = new Map();
+  // The first calculated project uses the values visible in the supplied NUMEX capture.
+  // Only seven result rows are legible there; the remaining points retain the chart's visible profile.
+  const capturedScenarioRows = [
+    [1, 4, 1.5, 30], [1, 4, 1.5, 45], [1, 4, 2, 45],
+    [1, 4, 2.2, 45], [1, 4, 2.1, 45], [1, 4, 2.3, 45],
+    [1, 4, 2.3, 0], [1, 4, 2.5, 45]
+  ];
+  const capturedRecovery = [.005, .005, .004, .004, .004, .004, .004, .004, .004,
+    .003, .003, .003, .003, .003, .003, .003, .003, .003, .002, .003,
+    .003, .003, .002, .003, .003, .002, .002, .003, .002, .001];
+  const capturedPi = [.388, .370, .379, .379, .378, .340, .388, .345, .336,
+    .315, .315, .312, .312, .307, .302, .300, .298, .260, .258, .256,
+    .253, .252, .237, .236, .235, .145, .235, .234, .187, .024];
+  const capturedVisibleResults = [
+    [7, '.004', '-222.915', '0.388', '0.0', '367.0', '34.557', '19.622', '0.185', '-0.0', '0.54', '23.238', '6', '0', '0', '0', '1.0', '4.0', '2.3', '0.0'],
+    [1, '.005', '-257.838', '0.388', '0.0', '425.5', '42.561', '22.522', '0.213', '0.0', '0.583', '23.165', '9', '0', '0', '0', '1.0', '4.0', '1.5', '30.0'],
+    [4, '.004', '-249.979', '0.379', '0.0', '406.0', '52.696', '21.228', '0.201', '-0.0', '0.678', '23.146', '8', '0', '0', '0', '1.0', '4.0', '2.2', '45.0'],
+    [3, '.004', '-249.693', '0.379', '0.0', '406.0', '50.227', '21.238', '0.201', '-0.0', '0.662', '23.156', '8', '0', '0', '0', '1.0', '4.0', '2.0', '45.0'],
+    [5, '.004', '-250.168', '0.378', '0.0', '406.0', '51.682', '21.204', '0.2', '0.0', '0.671', '23.152', '8', '0', '0', '0', '1.0', '4.0', '2.1', '45.0'],
+    [2, '.005', '-265.335', '0.37', '0.0', '425.5', '44.402', '21.768', '0.206', '0.0', '0.61', '23.171', '9', '0', '0', '0', '1.0', '4.0', '1.5', '45.0'],
+    [8, '.004', '-250.988', '0.345', '0.0', '386.5', '44.912', '18.95', '0.179', '-0.001', '0.63', '23.181', '7', '0', '0', '0', '1.0', '4.0', '2.5', '45.0']
+  ];
+  // The second calculated project is transcribed from the horizontal-well capture.
+  // Its six readable result rows are exact; the other PI points follow the visible scatter plot.
+  const capturedScenarioTwoRows = [
+    [3, 10, 1.5, 30, 150, 235], [3, 10, 2, 30, 150, 235],
+    [3, 10, 2.5, 30, 150, 235], [3, 10, 3, 30, 150, 235],
+    [3, 10, 2, 15, 200, 280]
+  ];
+  const capturedRecoveryTwo = [.007, .005, .005, .004, .006, .006, .006, .006, .005, .005,
+    .006, .006, .004, .005, .005, .006, .006, .007, .006, .006,
+    .006, .006, .006, .005, .003, .006, .006, .006, .006, .006];
+  const capturedPiTwo = [.83, .92, .95, .89, .98, 1.067, 1.01, 1.02, .97, .98,
+    1.154, 1.242, .94, .93, .91, 1, .97, .87, 1.03, 1.01,
+    .99, 1.116, 1.149, 1.082, .87, .93, 1, .99, .98, .70];
+  const capturedVisibleResultsTwo = [
+    [12, '0.006', '61.057', '1.242', '0.247', '253.0', '43.894', '28.152', '0.266', '-0.0', '0.509', '23.151', '0', '2', '0', '0', '3.0', '10.0', '2.5', '0.0', '250.0', '235.0'],
+    [11, '0.006', '46.529', '1.154', '0.2', '304.5', '60.866', '30.759', '0.291', '0.0', '0.61', '23.054', '0', '3', '0', '0', '3.0', '10.0', '2.0', '0.0', '250.0', '235.0'],
+    [23, '0.006', '45.254', '1.149', '0.196', '304.5', '55.382', '30.702', '0.29', '-0.001', '0.563', '23.084', '0', '3', '0', '0', '3.0', '10.0', '2.0', '30.0', '225.0', '150.0'],
+    [22, '0.006', '35.28', '1.116', '0.173', '304.5', '50.738', '29.911', '0.283', '-0.0', '0.516', '23.111', '0', '3', '0', '0', '3.0', '10.0', '1.5', '30.0', '225.0', '150.0'],
+    [24, '0.005', '20.59', '1.082', '0.147', '253.0', '33.751', '24.792', '0.234', '-0.0', '0.391', '23.214', '0', '2', '0', '0', '3.0', '10.0', '2.5', '30.0', '225.0', '150.0'],
+    [6, '0.006', '20.37', '1.067', '0.142', '304.5', '57.543', '28.647', '0.271', '0.0', '0.576', '23.085', '0', '3', '0', '0', '3.0', '10.0', '2.5', '15.0', '200.0', '280.0']
+  ];
+  const otherProjectScenario = { parameters: ['6::0p', '23', '24', '29', '10::0p', '11::0p'], rows: [...capturedScenarioTwoRows, ...Array.from({ length: 25 }, () => ['', '', '', '', '', ''])], method: '3', count: 30, selectedType: '', selectedParameter: '', selectedRow: -1, chartType: 'bar', metric: 'recovery', axisX: 'recovery', axisY: 'pi', sort: 'pi', descending: true, optimizer: 'Нелдера-Мида', objective: 'PI', placement: false };
   const initialState = {
-    scenario: { parameters: ['23', '6::0p', '10::0p', '11::0p', '24'], rows: [[4, 1, 100, 0, 2.3], [10, 3, 250, 235, 2.5], [4, 1, 100, 0, 2], ['', '', '', '', ''], ['', '', '', '', '']], method: '3', count: 5, selectedType: '', selectedParameter: '23', selectedRow: 0, chartType: 'bar', metric: 'recovery', axisX: 'index', axisY: 'index', sort: 'index', descending: false, optimizer: 'Нелдера-Мида', objective: 'PI', placement: false },
+    scenario: { parameters: ['6::0p', '23', '24', '29'], rows: [...capturedScenarioRows, ...Array.from({ length: 22 }, () => ['', '', '', ''])], method: '3', count: 30, selectedType: '', selectedParameter: '', selectedRow: -1, chartType: 'bar', metric: 'recovery', axisX: 'recovery', axisY: 'pi', sort: 'pi', descending: true, optimizer: 'Нелдера-Мида', objective: 'PI', placement: false },
     results: { variant: 2, well: '', restart: true, timeUnit: 'days', forecast: 'forecast', economicTime: 'months', topTab: 'rates', bottomTab: 'efficiency', topCurves: { oilHistory: true, liquidHistory: true, injectionHistory: true, waterCutHistory: true, oil: true, liquid: true, gas: false, injection: true, gasInjection: false, waterCut: true, pressure: true }, bottomCurves: { npv: true, cashFlow: true, pi: true, irr: true, capex: true, opex: true, tax: true, ndpi: true, prib: true, ndd: true, imush: true } }
   };
   const clone = value => JSON.parse(JSON.stringify(value));
   let state = clone(initialState);
   let projectResults = null;
+  let displayedScenarioVariant = null;
+  const scenarioByVariant = new Map();
   const metrics = [ ['index', '№'], ['recovery', 'Кин'], ['npv', 'NPV, млн р'], ['pi', 'PI'], ['irr', 'IRR'], ['capex', 'CAPEX, млн р'], ['liquid', 'FLPT, тыс т'], ['oil', 'FOPT, тыс т'], ['gas', 'FGPT, млн м3'], ['injection', 'FWIT, тыс м3'], ['waterCut', 'Wc, мас'] ];
+  const capturedSummaryHeaders = [...metrics.map(([, label]) => label), 'Рез, бар', 'ННС доб, шт', 'ГС доб, шт', 'ННС наг, шт', 'ГС наг, шт', '6::0p', '23', '24', '29'];
+  const capturedSummaryHeadersTwo = [...capturedSummaryHeaders, '10::0p', '11::0p'];
+  const capturedRank = new Map(capturedVisibleResults.map((row, index) => [row[0], index]));
+  const capturedRankTwo = new Map(capturedVisibleResultsTwo.map((row, index) => [row[0], index]));
+  const capturedResults = capturedRecovery.map((recovery, index) => ({ index: index + 1, recovery, pi: capturedPi[index] }));
+  capturedVisibleResults.forEach(display => {
+    capturedResults[display[0] - 1] = { ...capturedResults[display[0] - 1], npv: Number(display[2]), display };
+  });
+  const capturedResultsTwo = capturedRecoveryTwo.map((recovery, index) => ({ index: index + 1, recovery, pi: capturedPiTwo[index] }));
+  capturedVisibleResultsTwo.forEach(display => {
+    capturedResultsTwo[display[0] - 1] = { ...capturedResultsTwo[display[0] - 1], npv: Number(display[2]), display };
+  });
   const summaryRows = [
     { index: 1, recovery: .004, npv: -634.681, pi: -.077, irr: 0, capex: 595, liquid: 39.29, oil: 19.347, gas: .183, injection: 0, waterCut: .581 },
     { index: 2, recovery: .006, npv: -416.089, pi: .102, irr: 0, capex: 465, liquid: 43.894, oil: 28.152, gas: .266, injection: -0, waterCut: .509 },
@@ -145,7 +203,11 @@
     const panel = element('section', { className: 'numex-charts-panel nc-split', 'aria-label': 'Серийные расчеты' });
     const side = element('div', { className: 'nc-side' }); const main = element('div', { className: 'nc-main' }); panel.append(side, main);
     const config = state.scenario;
-    const activeRows = projectResults ? [{ ...projectResults.summary, index: projectResults.variant }] : summaryRows;
+    const capturedVariant = [1, 2].includes(projectResults?.variant) ? projectResults.variant : null;
+    const captured = capturedVariant !== null;
+    panel.classList.toggle('nc-captured-scenario', captured);
+    panel.classList.toggle('nc-captured-scenario-two', capturedVariant === 2);
+    const activeRows = capturedVariant === 1 ? capturedResults : capturedVariant === 2 ? capturedResultsTwo : projectResults ? [{ ...projectResults.summary, index: projectResults.variant }] : summaryRows;
     side.append(element('p', { className: 'nc-section-title', text: 'Создание сценария серийного расчета:' }));
     const typeList = element('div', { className: 'nc-list', role: 'listbox', 'aria-label': 'Типы параметров' });
     const attributeList = element('div', { className: 'nc-list', role: 'listbox', 'aria-label': 'Признаки параметров' });
@@ -180,21 +242,26 @@
     [['min', 'Мин'], ['max', 'Макс']].forEach(([value, text]) => { const input = element('input', { type: 'radio', name: 'nc-sort-direction', checked: config.descending === (value === 'max'), onchange: () => { config.descending = value === 'max'; drawTables(); drawGraphs(); notify(); } }); direction.append(element('label', {}, [input, text])); });
     side.append(element('div', { className: 'nc-option-row' }, ['Показатель,', select(metrics, config.sort, value => { config.sort = value; drawTables(); drawGraphs(); notify(); }, 'Сортировать варианты по'), direction]));
     const variants = element('div', { className: 'nc-table-wrap nc-scenario-variants' }); const summaries = element('div', { className: 'nc-table-wrap nc-scenario-summary' });
-    main.append(element('p', { className: 'nc-section-title', text: 'Таблица вариантов' }), variants, element('p', { className: 'nc-section-title' }, ['Расчетные показатели', element('span', { className: 'nc-reference-caption', text: projectResults ? projectResults.label : 'данные из видео' })]), summaries);
+    main.append(element('p', { className: 'nc-section-title', text: 'Таблица вариантов' }), variants, element('p', { className: 'nc-section-title' }, ['Расчетные показатели', element('span', { className: 'nc-reference-caption', text: captured ? '' : projectResults ? projectResults.label : 'данные из видео' })]), summaries);
     const graphs = chart(1200, 540, 'Сравнение вариантов и график взаимной зависимости'); main.append(graphs.toolbar, element('div', { className: 'nc-scenario-graphs' }, graphs.svg));
-    function sortedSummaries() { return activeRows.slice().sort((a, b) => { const av = a[config.sort] ?? Infinity; const bv = b[config.sort] ?? Infinity; return (av - bv) * (config.descending ? -1 : 1); }); }
+    function sortedSummaries() { return activeRows.slice().sort((a, b) => { const av = a[config.sort] ?? Infinity; const bv = b[config.sort] ?? Infinity; const difference = (av - bv) * (config.descending ? -1 : 1); const rank = capturedVariant === 2 ? capturedRankTwo : capturedRank; return difference || (captured ? (rank.get(a.index) ?? 100 + a.index) - (rank.get(b.index) ?? 100 + b.index) : 0); }); }
     function drawTables() {
       variants.replaceChildren(table(['№', ...config.parameters], config.rows.map((row, index) => [index + 1, ...row]), { editable: true, selected: config.selectedRow, onSelect: index => { config.selectedRow = index; variants.querySelectorAll('tbody tr').forEach((row, rowIndex) => row.setAttribute('aria-selected', String(rowIndex === index))); notify(); }, onEdit: (row, column, value) => { config.rows[row][column] = value.trim() === '' ? '' : Number.isFinite(Number(value)) ? Number(value) : value; notify(); } }));
-      summaries.replaceChildren(table(metrics.map(([, label]) => label), sortedSummaries().map(row => metrics.map(([key]) => row[key] ?? ''))));
+      summaries.replaceChildren(captured
+        ? table(capturedVariant === 2 ? capturedSummaryHeadersTwo : capturedSummaryHeaders, sortedSummaries().map(row => row.display ?? [row.index, ...Array(capturedVariant === 2 ? 21 : 19).fill('')]))
+        : table(metrics.map(([, label]) => label), sortedSummaries().map(row => metrics.map(([key]) => row[key] ?? ''))));
     }
     function drawGraphs() {
-      const sorted = sortedSummaries(); const values = sorted.map(row => row[config.metric]).filter(Number.isFinite); const extent = range(values, true);
-      const frame = plotFrame({ x: 65, y: 32, width: 500, height: 435, xMin: .35, xMax: 5.65, yMin: extent[0], yMax: extent[1], xTicks: [1, 2, 3, 4, 5], yTicks: ticks(extent[0], extent[1], 6), xLabel: '№', formatY: value => formatNumber(value, config.metric) });
+      const graphRows = captured ? activeRows.slice().sort((a, b) => a.index - b.index) : sortedSummaries();
+      const values = graphRows.map(row => row[config.metric]).filter(Number.isFinite); const extent = range(values, true);
+      const capturedBar = captured && config.metric === 'recovery';
+      const capturedScatter = captured && config.axisX === 'recovery' && config.axisY === 'pi';
+      const frame = plotFrame({ x: 65, y: 32, width: 500, height: 435, xMin: captured ? -.8 : .35, xMax: captured ? 31.8 : 5.65, yMin: capturedBar ? 0 : extent[0], yMax: capturedBar ? capturedVariant === 2 ? .00735 : .00525 : extent[1], xTicks: captured ? [0, 5, 10, 15, 20, 25, 30] : [1, 2, 3, 4, 5], yTicks: capturedBar ? (capturedVariant === 2 ? [0, .001, .002, .003, .004, .005, .006, .007] : [0, .001, .002, .003, .004, .005]) : ticks(extent[0], extent[1], 6), xLabel: '№', yLabel: capturedBar ? 'Кин' : '', formatY: value => capturedBar ? value.toFixed(3) : formatNumber(value, config.metric) });
       let markup = frame.markup; const points = [];
-      sorted.forEach((row, index) => { const value = row[config.metric]; if (!Number.isFinite(value)) return; points.push([index + 1, value]); if (config.chartType === 'bar') { const baseline = frame.sy(0); const top = frame.sy(value); markup += `<rect x="${frame.sx(index + .62)}" y="${Math.min(top, baseline)}" width="${frame.sx(1.38) - frame.sx(.62)}" height="${Math.max(1, Math.abs(baseline - top))}" fill="#2777aa"/>`; } });
+      graphRows.forEach((row, index) => { const value = row[config.metric]; if (!Number.isFinite(value)) return; points.push([index + 1, value]); if (config.chartType === 'bar') { const baseline = frame.sy(0); const top = frame.sy(value); markup += `<rect x="${frame.sx(index + .62)}" y="${Math.min(top, baseline)}" width="${frame.sx(1.38) - frame.sx(.62)}" height="${Math.max(1, Math.abs(baseline - top))}" fill="${capturedBar ? '#1f77b4' : '#2777aa'}"/>`; } });
       if (config.chartType === 'line') markup += curve(points, frame, '#2777aa');
       const xRange = range(activeRows.map(row => row[config.axisX]).filter(Number.isFinite), false); const yRange = range(activeRows.map(row => row[config.axisY]).filter(Number.isFinite), false);
-      const scatter = plotFrame({ x: 670, y: 32, width: 500, height: 435, xMin: xRange[0], xMax: xRange[1], yMin: yRange[0], yMax: yRange[1], xTicks: config.axisX === 'index' ? [1, 2, 3, 4, 5] : ticks(...xRange, 4), yTicks: config.axisY === 'index' ? [1, 2, 3, 4, 5] : ticks(...yRange, 4), xLabel: metrics.find(([key]) => key === config.axisX)?.[1], formatX: value => formatNumber(value, config.axisX), formatY: value => formatNumber(value, config.axisY) });
+      const scatter = plotFrame({ x: 670, y: 32, width: 500, height: 435, xMin: capturedScatter ? capturedVariant === 2 ? .0028 : .0008 : xRange[0], xMax: capturedScatter ? capturedVariant === 2 ? .0072 : .0052 : xRange[1], yMin: capturedScatter ? capturedVariant === 2 ? .67 : 0 : yRange[0], yMax: capturedScatter ? capturedVariant === 2 ? 1.27 : .405 : yRange[1], xTicks: capturedScatter ? (capturedVariant === 2 ? [.003, .0035, .004, .0045, .005, .0055, .006, .0065, .007] : [.001, .0015, .002, .0025, .003, .0035, .004, .0045, .005]) : config.axisX === 'index' ? [1, 2, 3, 4, 5] : ticks(...xRange, 4), yTicks: capturedScatter ? (capturedVariant === 2 ? [.7, .8, .9, 1, 1.1, 1.2] : [.05, .1, .15, .2, .25, .3, .35, .4]) : config.axisY === 'index' ? [1, 2, 3, 4, 5] : ticks(...yRange, 4), xLabel: metrics.find(([key]) => key === config.axisX)?.[1], yLabel: capturedScatter ? 'PI' : '', formatX: value => capturedScatter ? value.toFixed(4) : formatNumber(value, config.axisX), formatY: value => capturedScatter ? value.toFixed(2) : formatNumber(value, config.axisY) });
       markup += scatter.markup;
       activeRows.forEach(row => { if (!Number.isFinite(row[config.axisX]) || !Number.isFinite(row[config.axisY])) return; const x = scatter.sx(row[config.axisX]); const y = scatter.sy(row[config.axisY]); markup += `<circle cx="${x}" cy="${y}" r="5" fill="#2777aa"/>${textNode(row.index, x + 3, y - 3)}`; });
       graphs.render(markup);
@@ -419,6 +486,12 @@
   }
   function setProjectResults(value) {
     validateProjectResults(value);
+    const nextVariant = value?.variant ?? null;
+    if (nextVariant !== displayedScenarioVariant) {
+      if (displayedScenarioVariant != null) scenarioByVariant.set(displayedScenarioVariant, clone(state.scenario));
+      state.scenario = clone(scenarioByVariant.get(nextVariant) ?? (nextVariant === 1 ? initialState.scenario : otherProjectScenario));
+      displayedScenarioVariant = nextVariant;
+    }
     projectResults = value == null ? null : clone(value);
     if (projectResults) {
       projectResults.label = projectResults.label ?? projectResults.name;
@@ -436,7 +509,7 @@
     if (next.scenario) {
       validateScenario(next.scenario);
       const config = { ...initialState.scenario, ...next.scenario };
-      if (!['1', '2', '3', '4', '5'].includes(config.method) || !['bar', 'line'].includes(config.chartType) || !Number.isInteger(config.count) || config.count < 1 || config.count > 50 || config.rows.length !== config.count || !Number.isInteger(config.selectedRow) || config.selectedRow < 0 || config.selectedRow >= config.count || typeof config.descending !== 'boolean' || typeof config.placement !== 'boolean' || !['Нелдера-Мида'].includes(config.optimizer) || !['PI', 'NPV', 'Кин'].includes(config.objective)) throw new Error('Invalid scenario settings');
+      if (!['1', '2', '3', '4', '5'].includes(config.method) || !['bar', 'line'].includes(config.chartType) || !Number.isInteger(config.count) || config.count < 1 || config.count > 50 || config.rows.length !== config.count || !Number.isInteger(config.selectedRow) || config.selectedRow < -1 || config.selectedRow >= config.count || typeof config.descending !== 'boolean' || typeof config.placement !== 'boolean' || !['Нелдера-Мида'].includes(config.optimizer) || !['PI', 'NPV', 'Кин'].includes(config.objective)) throw new Error('Invalid scenario settings');
       if (![config.metric, config.axisX, config.axisY, config.sort].every(metric => metrics.some(([key]) => key === metric)) || typeof config.selectedType !== 'string' || typeof config.selectedParameter !== 'string') throw new Error('Invalid scenario chart selection');
     }
     if (next.results) {
@@ -447,6 +520,6 @@
     return true;
   }
   function setState(next) { validateState(next); if (next.scenario) state.scenario = { ...clone(initialState.scenario), ...clone(next.scenario) }; if (next.results) state.results = { ...clone(initialState.results), ...clone(next.results), topCurves: { ...initialState.results.topCurves, ...next.results.topCurves }, bottomCurves: { ...initialState.results.bottomCurves, ...next.results.bottomCurves } }; [...panels.keys()].forEach(refreshPanel); }
-  function resetState() { state = clone(initialState); [...panels.keys()].forEach(refreshPanel); }
+  function resetState() { state = clone(initialState); scenarioByVariant.clear(); displayedScenarioVariant = null; [...panels.keys()].forEach(refreshPanel); }
   window.NUMEXCharts = { createPanel, getState, validateState, setState, resetState, validateProjectResults, setProjectResults };
 })();

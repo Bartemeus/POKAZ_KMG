@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../vendor/addons/controls/OrbitControls.js';
-import { sceneData, getHorizonDepth } from './scene-data.js?v=20260926.7';
+import { sceneData, getHorizonDepth } from './scene-data.js?v=20260929.2';
 import { layoutDepthLabels, layoutHorizontalLabels, createAxisTicks } from './grid-labels.js?v=20260926.8';
 
 const area = document.querySelector('#model-area');

@@ -37,11 +37,7 @@ function fill(){
   for(const view of views){
     const iframe = view.querySelector('iframe');
     if(!iframe) continue;
-    if(view === current && isApp){
-      if(!iframe.hasAttribute('src')) iframe.src = iframe.dataset.src;
-    } else {
-      iframe.removeAttribute('src');
-    }
+    if(view === current && isApp && !iframe.hasAttribute('src')) iframe.src = iframe.dataset.src;
   }
   const file = current?.dataset.video;
   if(file){
@@ -75,10 +71,6 @@ export function hideContent(){
   clearTimeout(swapTimer);
   videoEl.pause();
   tumarVideoEl.pause();
-  for(const view of views){
-    const iframe = view.querySelector('iframe');
-    if(iframe) iframe.removeAttribute('src');
-  }
   contentEl.inert = true;
   contentEl.classList.remove('is-visible');
 }

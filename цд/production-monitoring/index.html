@@ -14,7 +14,7 @@
         <link href="public/style.css?v4" rel="stylesheet">
         <link rel="icon" type="image/x-icon" href="public/images/icons/favicon.png">
         <script src="public/js/jquery.min.js"></script>
-        <script src="app.js"></script>
+        <script src="app.js?v=20260929.2"></script>
         <script src="public/js/bootstrap.min.js"></script>
         <script src="public/js/jquery-dateFormat.min.js"></script>
         <script src="public/js/knockout-3.4.2.js"></script>
@@ -26,7 +26,8 @@
         <script src="public/js/jquery.dataTables.min.js"></script>
         <script src="public/js/line_chart.js"></script>
         <script src="public/js/popup_file.js"></script>
-        <link href="app.css" rel="stylesheet">
+        <link href="app.css?v=20260929.1" rel="stylesheet">
+        <script src="wells-focus.js?v=20260929.1" defer></script>
 </head>
     <body>
         <div class="dashboard"><style>
@@ -586,10 +587,10 @@
         </div>
         <div class="menu-navigation">
     <ul>
-        <li><a href="/field/1/productionMonitoring">Мониторинг
+        <li><a href="/field/10/productionMonitoring">Мониторинг
                 добычи</a></li>
         <!--        -->
-        <li><a href="/field/1/reverseCalculation">Обратный
+        <li><a href="/field/10/reverseCalculation">Обратный
                 расчет</a></li>
 <!--        --><!--            <li>-->
 <!--                <a href="/field/--><!--/prorva/reverseCalculation">Сводная-->
@@ -597,9 +598,9 @@
 <!--            </li>-->
 <!--        -->        <!--        <li><a href="/field/-->
         <!--/graphic">График ППР</a></li>-->
-        <li><a href="/field/1/repair">ПРС</a></li>
+        <li><a href="/field/10/repair">ПРС</a></li>
         
-        <li><a href="/field/1/repair_summary_v2_np">Сводки ПРС</a></li>
+        <li><a href="/field/10/repair_summary_v2_np">Сводки ПРС</a></li>
         <li><a href="http://10.32.10.100:8083/">ИИ-ассистент(тест)</a></li>
         <li><a href="http://10.32.10.100:8081/">Эффективность ПРС(тест)</a></li>
         <!-- <li><a href="/ukpg">УКПГ</a></li> -->
@@ -612,7 +613,7 @@
 
                 <!--            <li><a href="/field/-->
         <!--/profitability">Рентабельность</a></li>-->
-                    <li><a href="/field/1/bypasses">Обходы</a></li>
+                    <li><a href="/field/10/bypasses">Обходы</a></li>
         <!--<li><a href="/kpi">KPI</a></li>-->
         
         <li class="">
@@ -744,7 +745,7 @@
     <div class="page-info">
         <div class="page-title">
             <div>Мониторинг добычи</div>
-            <div>Месторождение "Уаз"</div>
+            <div>Месторождение "Восточный Молдабек"</div>
         </div>
         <div class="date-time">
     <div class="date-time-inner">
@@ -805,10 +806,10 @@
                     <div id="kmg" class=" collapse">
                                                 <ul>
                                                             <li>
-                                    <a href="/field/1/productionMonitoring">Уаз</a>
+                                    <a href="/field/10/productionMonitoring">Восточный Молдабек</a>
                                 </li>
                                                                                             <li>
-                                    <a href="/field/10/productionMonitoring">Восточный Молдабек</a>
+                                    <a href="/field/1/productionMonitoring">Уаз</a>
                                 </li>
                                                                                                                 </ul>
                     </div>
@@ -992,7 +993,7 @@
             <i class="glyphicon glyphicon-file"></i>
         </a>
         <div class="sortByItem" id="sortByItem">
-            <form id="normativeSortForm" action="/field/1/productionMonitoring" method="GET">
+            <form id="normativeSortForm" action="/field/10/productionMonitoring" method="GET">
                 <a class="sortByCancel">&times;</a>
                 <div class="control-row">
                     <div class="form-group">
@@ -1807,7 +1808,7 @@
                 <div class="clearfix"></div>
 </div>
 <script>
-	var fieldId = "1";
+	var fieldId = "10";
 		if (fieldId == 10)  {
 			document.getElementById("open_normTab").style.display = "block";
 			document.getElementById("close_normTab").style.display = "none";
@@ -1931,7 +1932,7 @@
         });
 
         var includeNoData = $('#filterNoData').is(':checked') ? 1 : 0;
-        var fieldId = "1";
+        var fieldId = "10";
         var widgetType = "zamer";
         var orderBy = $('#orderBy').val() || 'tr_oil';
         var orderType = $('input[name="orderType"]:checked').val() || 'DESC';
@@ -3290,7 +3291,7 @@ viewBox="0 0 5760 1960"
 </div>
 
 <script>
-    fieldId = 1;
+    fieldId = 10;
     
     var agzuSelected = 1;
     $.get('/agzuCreate', {fieldId: fieldId, agzu: agzuSelected}, function (res) {
@@ -3335,7 +3336,7 @@ viewBox="0 0 5760 1960"
 </script>    </div>
 </div>
 <script>
-    var fieldId = "1";
+    var fieldId = "10";
     var $popup = $('.gzu-popup');
     var inputHourSecond = "01:59";
     var inputHour = 02;

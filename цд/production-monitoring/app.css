@@ -26,6 +26,12 @@ body {
     height: 2160px !important;
 }
 
+/* The v5 live tab frames just the well table from the wide offline dashboard. */
+html.wells-focus,html.wells-focus body{overflow:hidden!important}
+html.wells-focus #normativeTable .widget-inner{scrollbar-width:none}
+html.wells-focus #normativeTable .widget-inner::-webkit-scrollbar{display:none}
+html.wells-focus .normative-cell.focus-muted-red{background:#873b40!important}
+
 /* --- 1. Push and Event Card Overlay --- */
 .push {
     position: absolute;
@@ -669,5 +675,3 @@ svg {
     align-items: center;
     justify-content: center;
 }
-
-

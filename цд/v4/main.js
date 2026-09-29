@@ -16,7 +16,17 @@ import { bindInput, trackHover } from './input.js';
 import { applyDebugEntry } from './debug-entry.js';
 
 buildStack()
-  .then(() => document.getElementById('loader').classList.add('is-done'))
+  .then(() => {
+    document.getElementById('loader').classList.add('is-done');
+    // Prepare the production monitor while the visitor is viewing the 3D scene.
+    // The frame stays mounted when switching layers, so returning to it is immediate.
+    const warmMonitor = () => {
+      const frame = document.getElementById('content-production-monitoring');
+      if(!frame.hasAttribute('src')) frame.src = frame.dataset.src;
+    };
+    if('requestIdleCallback' in window) requestIdleCallback(warmMonitor, {timeout:2000});
+    else setTimeout(warmMonitor, 500);
+  })
   .catch(error => { document.querySelector('#loader .message').textContent = 'Ошибка: ' + error.message; });
 
 bindInput();

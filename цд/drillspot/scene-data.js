@@ -22,8 +22,11 @@ export const sceneData = {
   trajectory: [
     [0, 0, 0], [0, 50, 0], [1, 100, 0], [5, 145, 0],
     [17, 181, 0], [43, 214, -1], [83, 240, -2],
-    [140, 257, -3], [220, 266, -4], [310, 271, -5],
-    [400, 273, -6], [470, 274, -7], [522.29, 275.32, -8],
+    // Keep the landing section midway between Top_M-II (254) and Base_M-II (272).
+    ...[[140, -3], [220, -4], [310, -5], [400, -6], [470, -7], [522.29, -8]]
+      .map(([x, z]) => [x, getHorizonDepth(x, z, 263), z]),
+    // Extend the visible tip past the end of the surfaces at x=535.
+    [580, getHorizonDepth(522.29, -8, 263), -9],
   ],
 };
 
