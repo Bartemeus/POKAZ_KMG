@@ -41,9 +41,9 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $env:ПОКАЗ_ВЕРСИЯ = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '1.0.' + $env:GITHUB_RUN_NUMBER }
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" 'инструменты/установщик.iss'
-          if ($LASTEXITCODE -ne 0) { throw "ISCC завершился с кодом $LASTEXITCODE" }
+          New-Item -ItemType Directory -Force -Path 'инструменты/выход' | Out-Null
+          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" 'инструменты/установщик.nsi'
+          if ($LASTEXITCODE -ne 0) { throw "makensis завершился с кодом $LASTEXITCODE" }
           if (-not (Test-Path 'инструменты/выход/POKAZ_KMG_Setup.exe')) { throw 'Установщик не создан' }
 
       - name: Опубликовать установщик
