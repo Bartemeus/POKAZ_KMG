@@ -44,7 +44,7 @@ body.is-final #asset-toggle { display: none; }
 #top12 .companies { font-size: 15.5px; color: #7c8da6; line-height: 1.4; margin-bottom: 6px; }
 #top12 .fields { font-size: 18px; color: #dce7f5; line-height: 1.5; padding: 8px 12px; border-left: 2px solid rgba(79,227,255,.35); background: rgba(79,227,255,.04); border-radius: 0 8px 8px 0; }
 
-/* All systems share the same content layout; TEO opens with its v5 images. */
+/* All systems share the same content layout. */
 #content .content-view-app .content-heading {
   display: flex;
   align-items: center;
@@ -108,18 +108,45 @@ body.is-final #asset-toggle { display: none; }
 #content .content-view-app[data-view="overview"] .content-carousel,
 #content .content-view-app[data-view="live"] .content-live { display: block; }
 
-#content .content-carousel { position: relative; overflow: hidden; }
-#content .content-carousel img {
+#content .content-view-app[data-zone="reservoir"][data-step="2"] { justify-content: center; }
+#content .content-view-app .content-carousel {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+  align-self: center;
+  width: min(100%, calc(185.9vh - 307px));
+  width: min(100%, calc(185.9dvh - 307px));
+  height: auto;
+  aspect-ratio: 2046 / 1100;
+}
+#content .content-carousel .teo-screen {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  border: 0;
+  background: #f0f0f0;
   opacity: 0;
-  transform: translateX(18px) scale(1.025);
-  transition: opacity .7s ease, transform .8s cubic-bezier(.2,.8,.2,1);
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(24px) scale(.985);
+  transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1), visibility 0s .5s;
 }
-#content .content-carousel img.is-active { opacity: 1; transform: translateX(0) scale(1); }
+#content .content-carousel .teo-screen.is-past { transform: translateX(-24px) scale(.985); }
+#content .content-carousel .teo-screen.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0) scale(1);
+  transition: opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1), visibility 0s;
+}
+#content .content-carousel .teo-screen:fullscreen {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  transform: none;
+  transition: none;
+}
 #content .content-carousel button {
   position: absolute;
   top: 50%;
@@ -143,6 +170,14 @@ body.is-final #asset-toggle { display: none; }
 #content .content-carousel button:disabled { opacity: .3; cursor: default; }
 #teo-prev { left: 12px; }
 #teo-next { right: 12px; }
+#content #teo-expand {
+  top: 12px;
+  right: 12px;
+  transform: none;
+  width: 44px;
+  height: 40px;
+  font-size: 25px;
+}
 #teo-count {
   position: absolute;
   bottom: 12px;

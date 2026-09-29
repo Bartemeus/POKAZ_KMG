@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="v4/styles/asset-card.css">
 <link rel="stylesheet" href="v4/styles/labels.css">
 <link rel="stylesheet" href="v4/styles/content.css?v=drillspot-2">
-<link rel="stylesheet" href="v6/overrides.css?v=2">
+<link rel="stylesheet" href="v6/overrides.css?v=4">
 </head>
 <body data-version="v6">
 
@@ -438,10 +438,11 @@
         <button type="button" role="tab" data-view="live" aria-selected="false" aria-controls="content-numex">Живая система</button>
       </div>
     </div>
-    <div class="content-carousel" id="content-teo-overview" role="region" aria-label="Кадры технико-экономической оценки">
-      <img src="нюмекс2.png" alt="Технико-экономическая оценка — кадр 1" class="is-active">
-      <img src="нюмекс1.png" alt="Технико-экономическая оценка — кадр 2">
-      <img src="нюмекс4.png" alt="Технико-экономическая оценка — кадр 3">
+    <div class="content-carousel" id="content-teo-overview" role="region" aria-label="Экраны технико-экономической оценки">
+      <iframe class="teo-screen is-active" data-src="NUMEX.html?в_презентации=1&amp;page=development&amp;project=1" title="Первый расчёт — Система разработки" allow="fullscreen"></iframe>
+      <iframe class="teo-screen" data-src="NUMEX.html?в_презентации=1&amp;page=scenarios&amp;project=1" title="Первый расчёт — Серийные расчёты" allow="fullscreen"></iframe>
+      <iframe class="teo-screen" data-src="NUMEX.html?в_презентации=1&amp;page=scenarios&amp;project=2" title="Второй расчёт — Серийные расчёты" allow="fullscreen"></iframe>
+      <button id="teo-expand" type="button" aria-label="Развернуть экран NUMEX" title="Развернуть экран NUMEX">⛶</button>
       <button id="teo-prev" type="button" aria-label="Предыдущий кадр">‹</button>
       <button id="teo-next" type="button" aria-label="Следующий кадр">›</button>
       <span id="teo-count" aria-live="polite">1 / 3</span>
@@ -487,7 +488,7 @@
 } }
 </script>
 <script type="module" src="v4/main.js?v=v6-back-1"></script>
-<script defer src="v6/content-tabs.js?v=3"></script>
+<script defer src="v6/content-tabs.js?v=5"></script>
 <script type="module" src="v6/presentation-steps.js?v=5"></script>
 </body>
 </html>

@@ -176,5 +176,6 @@
   });
   window.addEventListener('numex:open-project', () => document.querySelector('#загрузка-параметров').click());
   window.NUMEXProjects = { getState, validateState, setState, resetState, importProject, calculate };
-  loadProject(presets[0]);
+  const requestedProject = new URLSearchParams(location.search).get('project');
+  loadProject(presets.find(project => String(project.variant) === requestedProject) ?? presets[0]);
 })();
