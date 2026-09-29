@@ -2229,6 +2229,10 @@ function closeProject(){
 
   closeT1 = setTimeout(finishClosing, ЗАКРЫТИЕ_МС);
 }
+/* v5: откат такта «назад» с первого слоя закрывает слой, но в финальный вид
+   (ТОП-12, расширенные эффекты) попадать не должен — там нужен кадр «Первый
+   актив», каким он был до открытия слоя. Флаг ставит сценарий внизу файла. */
+let возвратБезФинала = false;
 function finishClosing(){
   if(!state.closing) return;
   $('pc-system').removeAttribute('src');
@@ -2237,6 +2241,11 @@ function finishClosing(){
   controls.autoRotate = true;
   controls.enabled = true;
   refresh();
+  if(возвратБезФинала){
+    возвратБезФинала = false;
+    if(window.__открытьСправку) window.__открытьСправку();
+    return;
+  }
   /* 28.09 (Адиль): «в финальном кадре вместо блока про первый актив покажем
      ТОП-12 месторождений, где мы внедряем ЦД». После первого возврата из
      слоя карточка «Первый актив» справа не всплывает — вместо неё
@@ -3692,6 +3701,55 @@ if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
     async () => { switchProject('naz'); await пауза(MINI_TRANSITION_MS + 60); },
     async () => { closeProject(); },
   ];
+  /* 29.09 (Адиль): «добавь кнопку назад, чтобы можно было идти назад».
+     Клавиша ← / PageUp / Backspace откатывает один такт. Для каждого шага
+     вперёд есть зеркальный откат — обратно[i] возвращает экран в состояние,
+     каким он был ПОСЛЕ шага i-1. Отклонено: перепроигрывать сценарий с нуля
+     до нужного такта — анимации перелёта стопки идут по секунде, откат на
+     один такт превратился бы в десяток секунд ожидания. */
+  const сброситьФинал = () => {
+    if(!эффектыФиналВид) return;
+    эффектыФиналВид = false;
+    document.body.classList.remove('финал');
+    рендерЭффекты();
+    if(window.__закрытьТоп12) window.__закрытьТоп12();
+    const подпись = document.querySelector('#pilot span:first-child');
+    if(подпись) подпись.textContent = 'Первый актив';   // __открытьТоп12 переименовывает кнопку
+  };
+  const обратно = [
+    /* 0 */ async () => document.getElementById('lay-plast').click(),   // повторный клик по раскрытому контуру сворачивает его
+    /* 1 */ async () => document.getElementById('lay-plast').click(),   // выбранный «скважины» → снова «пласта»
+    /* 2 */ async () => document.getElementById('lay-skv').click(),
+    /* 3 */ async () => {
+      if(window.__закрытьСправку) window.__закрытьСправку();
+      document.getElementById('lay-naz').click();   // справка сбросила выбор — возвращаем раскрытую «инфраструктуру»
+    },
+    /* 4 */ async () => {
+      возвратБезФинала = true;   // finishClosing вернёт справку «Первый актив», а не финал с ТОП-12
+      closeProject();
+      await пауза(ЗАКРЫТИЕ_МС + 150);
+    },
+    /* 5 */ async () => {
+      panelState.zone = 'plast'; panelState.sub = 1;
+      openProject('plast');   // из ТЭО обратно в «Стратегию»
+      await пауза(400);
+    },
+    /* 6 */ async () => { showTeoImage(0); await пауза(720); },
+    /* 7 */ async () => { showTeoImage(1); await пауза(720); },
+    /* 8 */ async () => {
+      panelState.zone = 'plast'; panelState.sub = 2;
+      switchProject('plast');
+      await пауза(500);   // контент ТЭО подставляется через 260 мс и открывается с первого кадра
+      showTeoImage(2);
+      await пауза(720);
+    },
+    /* 9 */ async () => { switchProject('skv'); await пауза(MINI_TRANSITION_MS + 60); },
+    /* 10 */ async () => {
+      сброситьФинал();   // из финала обратно в открытый слой: расширенные эффекты и ТОП-12 гасим
+      launchProject('naz');
+      await пауза(MINI_TRANSITION_MS + 60);
+    },
+  ];
   let текущий = 0, идёт = false;
   const teoOpen = () => state.openId === 'plast' && panelState.sub === 2;
   const syncTeoStep = () => { if(teoOpen()) текущий = 6 + teoImageIndex; };
@@ -3702,18 +3760,22 @@ if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
     catch(err){ console.error('v5 шаг', текущий, err); }
     finally { идёт = false; }
   }
+  async function назадШаг(){
+    if(идёт || текущий <= 0) return;
+    идёт = true;
+    try { await обратно[--текущий](); }
+    catch(err){ console.error('v5 откат', текущий, err); }
+    finally { идёт = false; }
+  }
   addEventListener('keydown', async e => {
-    const назад = e.code === 'ArrowLeft' || e.code === 'PageUp';
+    const назад = e.code === 'ArrowLeft' || e.code === 'PageUp' || e.code === 'Backspace';
     if(!назад && e.code !== 'Space' && e.code !== 'ArrowRight' && e.code !== 'Enter' && e.code !== 'NumpadEnter' && e.code !== 'PageDown') return;
     const т = e.target;
     if(т && (т.tagName === 'INPUT' || т.tagName === 'TEXTAREA' || т.isContentEditable)) return;
     e.preventDefault();
     if(идёт || e.repeat) return;
-    if(назад){
-      if(teoOpen() && teoImageIndex > 0){ showTeoImage(teoImageIndex - 1); syncTeoStep(); }
-      return;
-    }
     syncTeoStep();
+    if(назад){ await назадШаг(); return; }
     await вперёд();
   });
   $('pc-carousel-prev').addEventListener('click', e => {
