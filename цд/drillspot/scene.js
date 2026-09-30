@@ -12,7 +12,7 @@ const depthLabels = document.querySelector('#depth-labels');
 const compass = document.querySelector('#orientation-gizmo');
 const presentationView = new URLSearchParams(location.search).get('presentation') === 'v6';
 // Change the magnitude to adjust rotation speed; change the sign to reverse direction.
-const PRESENTATION_ROTATION_SPEED = -1.2;
+const PRESENTATION_ROTATION_SPEED = -2.2;
 // In v6 the well scene starts near the supplied front view, with the well
 // trajectory and the section plane filling most of the Directional widget.
 const initialTarget = new THREE.Vector3(...(presentationView ? [367, -575, 0] : sceneData.camera.target));
