@@ -1798,6 +1798,8 @@ build().catch(e => { document.getElementById('loadmsg').textContent = 'Ошиб�
    ИНТЕРАКЦИЯ
    ================================================================ */
 const state = { hover:null, hoverSub:null, locked:null, launching:null, closing:null, openId:null, camAz:0, camRadius:0, launchRadius:0, launchPolar:0, launchAt:0, closeAt:0, viewShiftX:0, viewShiftTargetX:0, viewShiftОт:0, переходАт:0 };
+// Сохраняем масштаб обзора до выбора слоя, чтобы вернуть его после закрытия списка.
+let радиусДоВыбора = null;
 // РАСКРЫТА объявлена выше, у pickMeshes: она нужна ещё в build() для вычисляемых там restPickMeshes
 const panelState = { zone:null, sub:null };
 const active = () => state.locked || state.hover;
@@ -2869,6 +2871,31 @@ function animate(){
     }
   }
 
+  // При выборе крайнего слоя соседние плиты раздвигаются только в одну сторону.
+  // Центрируем всю стопку, включая выступающие подслои пласта, а не выбранную
+  // плиту: иначе верх или низ оказываются за пределами окна.
+  let радиусДляСтопки = null;
+  if(state.locked && !state.openId && !state.launching && !state.closing && pickMeshes.length){
+    const разлёт = subSpread('plast');
+    let верх = -Infinity, низ = Infinity;
+    for(const id of RANK_UP){
+      const z = zones[id];
+      const вверх = id === 'plast' ? разлёт.up : 0;
+      const вниз = id === 'plast' ? разлёт.down : 0;
+      верх = Math.max(верх, z.yt + offsets[id] + вверх);
+      низ = Math.min(низ, z.yb + offsets[id] - вниз);
+    }
+    const сдвиг = controls.target.y - world.position.y - (верх + низ)/2;
+    for(const id of RANK_UP) offsets[id] += сдвиг;
+
+    // Наклон камеры добавляет к высоте стопки видимую глубину плит. Оставляем
+    // запас сверху для заголовка и снизу для навигации по страницам.
+    const расстояние = camera.position.distanceTo(controls.target);
+    const наклон = Math.abs(camera.position.y - controls.target.y) / Math.max(расстояние, 1);
+    const полВысоты = (верх - низ)/2 + наклон*(FOOT + 190)/2 + 12;
+    радиусДляСтопки = полВысоты / (Math.tan(THREE.MathUtils.degToRad(camera.fov/2)) * 0.88);
+  }
+
   const pulse = 0.72 + 0.28*Math.sin(t*3.1);
   // мс с момента второго клика — общий таймер на раздвижку соседей и вспышку выбранного
   const launchElapsed = state.launching ? performance.now() - state.launchAt : 0;
@@ -3195,7 +3222,21 @@ function animate(){
       controls.target.z + горизР*Math.cos(state.camAz)
     );
     camera.lookAt(controls.target);
-  } else controls.update();
+  } else {
+    // На крутом ракурсе для полного кадра может понадобиться дистанция больше
+    // обычного предела OrbitControls; возвращаем предел после отъезда камеры.
+    if(радиусДляСтопки !== null) controls.maxDistance = Math.max(760, радиусДляСтопки * 1.05);
+    else if(camera.position.distanceTo(controls.target) < 759) controls.maxDistance = 760;
+    controls.update();
+    const расстояние = camera.position.distanceTo(controls.target);
+    if(радиусДляСтопки !== null && радиусДоВыбора === null) радиусДоВыбора = расстояние;
+    if(радиусДоВыбора !== null){
+      const цель = радиусДляСтопки === null ? радиусДоВыбора : Math.max(радиусДоВыбора, радиусДляСтопки);
+      const новыйРадиус = расстояние + (цель - расстояние)*k;
+      camera.position.sub(controls.target).setLength(новыйРадиус).add(controls.target);
+      if(радиусДляСтопки === null && Math.abs(цель - новыйРадиус) < 0.5) радиусДоВыбора = null;
+    }
+  }
   // сдвиг окна проекции под коридор между панелями — тем же плавным ходом,
   // что и остальное (см. комментарий у fitBetweenPanels): раньше прыгал
   // разом в кадре, где openProject уже поставил классу .vis, и модель
