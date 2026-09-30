@@ -52,6 +52,13 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #stack.выбран #navdot{box-shadow:0 0 0 3px rgba(5,8,16,.9);transition:none}
 #stack.выбран #navfill{transition:none}
 #stack.скрыт{opacity:0;pointer-events:none;transform:translateY(calc(-50% - 14px))}
+/* Справа контент занимает 70vw; центр оставшейся левой панели — 15vw.
+   Половину ширины самого логотипа компенсируем независимо от его размера. */
+#kmg-logo{position:fixed;left:15vw;top:155px;transform:translateX(-50%);z-index:10;width:150px;height:auto;
+  opacity:0;pointer-events:none;filter:url(#kmg-светлый);
+  transition:opacity .4s ease}
+#kmg-logo.виден{opacity:1}
+body.финал #kmg-logo{opacity:0}
 /* линия процесса: связывает все контуры и шаги в одну цепочку */
 #navline{position:absolute;left:12px;top:20px;bottom:20px;width:2px;background:rgba(140,170,210,.22);border-radius:2px}
 #navline::after{content:'';position:absolute;left:-4px;bottom:-10px;
@@ -392,9 +399,9 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
 #pc-kick{font-family:var(--mono);font-size:18px;letter-spacing:.3em;text-transform:uppercase;color:var(--pc,#4FE3FF)}
 #pc-name{font-family:var(--serif);font-size:52px;font-weight:600;line-height:1.2;max-width:26ch}
 #pc-claim{font-size:23px;color:var(--dim);line-height:1.6;max-width:52ch}
-#pc-video{display:none;width:100%;max-height:62vh;object-fit:contain;background:#02040A;
+#pc-video{display:none;width:100%;height:62vh;flex-shrink:0;object-fit:contain;background:#02040A;
   border:1px solid var(--line);border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 18px 46px rgba(0,0,0,.32)}
-#pc-carousel{display:none;position:relative;width:100%;aspect-ratio:2046 / 1100;max-height:62vh;
+#pc-carousel{display:none;position:relative;width:100%;height:62vh;flex-shrink:0;
   overflow:hidden;background:#02040A;border:1px solid var(--line);
   border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 18px 46px rgba(0,0,0,.32)}
 #pc-carousel img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
@@ -421,14 +428,16 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
   aspect-ratio:20/9;object-fit:cover;background:#02040A;border:1px solid var(--line);
   border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 14px 38px rgba(0,0,0,.38)}
 #project-content.с-tumar #pc-tumar{display:block}
-#project-content.с-tumar #pc-name{max-width:calc(100% - min(20vw,400px) - 36px)}
+#project-content.с-tumar #pc-name{max-width:none;white-space:nowrap}
 #video-preloaders{position:fixed;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none}
 /* padding-top отведён под шапку кадра (см. #hdr: top:22, ~54 высоты + запас):
    H1 постоянно висит в левом верхнем углу и, если бы pc-name стартовал по
    умолчанию с 64px, они сталкивались бы в углу — теперь заголовок системы
    уезжает под H1 и не наезжает на него. */
-#project-content:is(.с-видео,.с-системой,.с-карусель){padding-top:96px;padding-bottom:42px;gap:12px}
+#project-content:is(.с-видео,.с-системой,.с-карусель){padding-top:96px;padding-bottom:var(--content-bottom,60px);gap:12px}
+#project-content:is(.с-видео,.с-карусель){justify-content:flex-end}
 #project-content:is(.с-видео,.с-системой,.с-карусель) #pc-name{font-size:38px}
+#project-content.с-tumar.с-видео #pc-name{font-size:clamp(16px,2vw,38px)}
 /* 24.09 (Адиль): убраны кнопка «← к цифровому двойнику» и жёлтый кикер
    «ЦД … · проект NN» на карточке системы. Возврат идёт единственной
    кнопкой в нижнем левом углу у миниатюры 3D (см. #mini-reset). Разметка
@@ -437,18 +446,22 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
 #project-content:is(.с-видео,.с-системой,.с-карусель) :is(#pc-claim,#pc-badge,#pc-back,#pc-kick){display:none}
 #project-content.с-видео #pc-video{display:block}
 #project-content.с-системой #pc-system{display:block}
-#project-content.с-системой{padding:96px 0 0;gap:0;justify-content:flex-start;overflow:hidden}
-#project-content.с-системой #pc-name{width:min(92%,1280px);align-self:center;padding:0 0 18px;flex-shrink:0;max-width:none}
-#project-content.с-системой #pc-system{width:min(92%,1280px);align-self:center;height:0;min-height:0;max-height:none;aspect-ratio:auto;flex:1 1 0}
+#pc-system-header{display:contents}
+#pc-system-header left-head-btns{display:none}
+#project-content.с-системой{padding:96px 0 var(--content-bottom,60px);gap:0;justify-content:flex-end;overflow:hidden}
+#project-content.с-системой #pc-system-header{display:flex;align-items:center;gap:20px;
+  width:min(92%,1280px);align-self:center;padding-bottom:18px;flex-shrink:0}
+#project-content.с-системой #pc-system-header left-head-btns{display:block}
+#project-content.с-системой #pc-name{width:auto;align-self:auto;padding:0;flex:1;max-width:none}
+#project-content.с-системой #pc-system{width:min(92%,1280px);align-self:center;height:62vh;min-height:0;max-height:none;aspect-ratio:auto;flex:0 0 62vh}
 #project-content.с-карусель #pc-carousel{display:block}
-/* Кнопка возврата к первому кадру. Стоит у 3D-модели в нижнем левом углу:
-   миниатюра занимает `--mini-width × --мини-высота` от MINI_MARGIN, кнопка
-   ложится сразу справа от миниатюры (23.09, Адиль — «возврат у 3D-модели»).
+/* Кнопка возврата к первому кадру. Стоит у 3D-модели в левом углу:
+   по горизонтали идёт за `--mini-width`, снизу держит общий с контентом отступ.
    Прежние 25vw уводили её то внутрь миниатюры на узком мониторе, то далеко
    от неё на широком: считаем от габарита самой миниатюры, а не от окна. */
 #mini-reset{position:fixed;z-index:16;
   left:calc(var(--mini-margin,34px) + var(--mini-width,35.1vh) + 12px);
-  bottom:var(--mini-margin,34px);
+  bottom:var(--content-bottom,60px);
   width:44px;height:44px;display:grid;place-items:center;transform:translateX(32px);
   border:1px solid var(--line);border-left:2px solid var(--cyan);background:rgba(10,18,32,.88);
   color:var(--txt);font-family:var(--mono);font-size:22px;cursor:pointer;backdrop-filter:blur(8px);
@@ -458,6 +471,7 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
 #pc-badge{align-self:flex-start;font-family:var(--mono);font-size:15px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--amber);border:1px solid rgba(240,174,74,.5);padding:7px 14px;margin-top:8px}
 </style>
+<script type="module" src="./v5/left-head-btns.js"></script>
 </head>
 <body>
 
@@ -472,6 +486,20 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
   <h1>Цифровой двойник с применением <b style="color:var(--cyan)">ИИ</b></h1>
 </div>
 
+<!-- Белая копия силуэта делает тёмные части читаемыми; поверх остаются исходные синие пиксели. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden">
+  <defs>
+    <filter id="kmg-светлый" color-interpolation-filters="sRGB">
+      <feColorMatrix in="SourceGraphic" type="matrix" result="синяя-маска"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -2 0 2 0 -.2"/>
+      <feComposite in="SourceGraphic" in2="синяя-маска" operator="in" result="синее"/>
+      <feFlood flood-color="white" result="белое"/>
+      <feComposite in="белое" in2="SourceAlpha" operator="in" result="белый-силуэт"/>
+      <feMerge><feMergeNode in="белый-силуэт"/><feMergeNode in="синее"/></feMerge>
+    </filter>
+  </defs>
+</svg>
+<img id="kmg-logo" src="kmg_3.png" alt="КазМунайГаз" aria-hidden="true">
 <div id="stack" class="слева">
   <div id="navline"><div id="navfill"></div><div id="navdot"></div></div>
 </div>
@@ -522,7 +550,9 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
 <aside id="project-content">
   <button id="pc-back">← к цифровому двойнику</button>
   <div id="pc-kick"></div>
-  <div id="pc-name"></div>
+  <div id="pc-system-header">
+    <div id="pc-name"></div>
+  </div>
   <div id="pc-claim"></div>
   <video id="pc-video" controls autoplay muted loop playsinline preload="auto"></video>
   <div id="pc-carousel" role="region" aria-label="Кадры технико-экономической оценки">
@@ -543,7 +573,7 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
      со страницей. TUMAR уже грузится своим видимым #pc-tumar. -->
 <div id="video-preloaders" aria-hidden="true">
   <video src="numex_opt.mp4" preload="auto" muted playsinline></video>
-  <video src="drillspot_cut.mp4" preload="auto" muted playsinline></video>
+  <video src="drillspot_v5.mp4" preload="auto" muted playsinline></video>
 </div>
 <button id="mini-reset" type="button" aria-label="Вернуть исходный вид" title="Вернуть исходный вид">↩</button>
 
@@ -1613,7 +1643,8 @@ async function build(){
         restHit.position.y = (st+sb)/2 + REST_OFFSET.plast;
         world.add(restHit);
         restPickMeshes.push(restHit);
-        z.subs3d.push({ wrap, physMats, wireMats, holo:hb.userData.parts, st, sb, hit, off:0, mix:0 });
+        const физическиеМеши = g.children.filter(n => n.isMesh && physMats.includes(n.material));
+        z.subs3d.push({ wrap, физическиеМеши, physMats, wireMats, holo:hb.userData.parts, st, sb, hit, off:0, mix:0 });
       }
       z.столбы = []; z.узлыСтолбов = [];
       собратьСтолбы(z.scaleG, yb, yt, FOOT, DEPTH, ZONES.plast.color, z.столбы, z.узлыСтолбов);
@@ -1836,21 +1867,20 @@ const УХОД_ВНИЗ = 260;          // и вниз, в тот же угол 
    высоты окна, потому что и сама модель на экране растёт вместе с ней.
    MINI_HEIGHT_RATIO ещё и отдана панели через CSS-переменную: панель не
    должна заезжать в угол, поэтому её max-height считается от неё же. */
-/* 28.09 (Адиль): «мини наезжает на левую панель — размести пирог в
-   изначальном кадре немного выше». Уменьшил ratio 0.56 → 0.44 и
-   поднял нижний отступ на 32 → 52 px: mini центр уезжает выше, и
-   между низом стека (top:50% + translateY(-50%) + высота списка) и
-   верхним краем мини остаётся зазор. Плиты остаются читаемыми — три
-   слоя по-прежнему разделены. */
-const MINI_SCALE = 0.38;
-const MINI_HEIGHT_RATIO = 0.44;
+/* Нижняя линия контента и 3D фиксирована и не зависит от загрузки видео.
+   Миниатюра уменьшена настолько, чтобы после выравнивания низа она не
+   заходила на список слоёв. */
+const MINI_SCALE = 0.31;
+const MINI_HEIGHT_RATIO = 0.36;
 const MINI_ASPECT_RATIO = 0.90;
 const MINI_MARGIN = 52;
+const CONTENT_BOTTOM = 60;
 const MINI_TRANSITION_MS = 900;
 document.documentElement.style.setProperty('--мини-высота', (MINI_HEIGHT_RATIO*100) + 'vh');
 document.documentElement.style.setProperty('--mini-width', (MINI_HEIGHT_RATIO*MINI_ASPECT_RATIO*100) + 'vh');
 document.documentElement.style.setProperty('--mini-half-height', (MINI_HEIGHT_RATIO*50) + 'vh');
 document.documentElement.style.setProperty('--mini-margin', MINI_MARGIN + 'px');
+document.documentElement.style.setProperty('--content-bottom', CONTENT_BOTTOM + 'px');
 const _forward = new THREE.Vector3(), _right = new THREE.Vector3(), _up = new THREE.Vector3(), _cameraToStack = new THREE.Vector3();
 /* Куда сдвинуть стопку в мире, чтобы её центр встал в центр углового места.
    Сдвиг идёт строго в плоскости, перпендикулярной взгляду камеры (вправо и
@@ -1861,7 +1891,8 @@ const _forward = new THREE.Vector3(), _right = new THREE.Vector3(), _up = new TH
 function getMiniStackOffset(out){
   const W = innerWidth, H = innerHeight;
   const boxHeight = H*MINI_HEIGHT_RATIO, boxWidth = boxHeight*MINI_ASPECT_RATIO;
-  const centerX = MINI_MARGIN + boxWidth/2, centerY = H - MINI_MARGIN - boxHeight/2;
+  const centerX = MINI_MARGIN + boxWidth/2;
+  const centerY = H - CONTENT_BOTTOM - boxHeight/2;
   camera.getWorldDirection(_forward);
   _right.crossVectors(_forward, camera.up).normalize();
   _up.crossVectors(_right, _forward);
@@ -1873,6 +1904,42 @@ function getMiniStackOffset(out){
   return out.set(0, 0, 0).addScaledVector(_right, moveRight).addScaledVector(_up, moveUp);
 }
 const _miniOffset = new THREE.Vector3();
+const _miniDelta = new THREE.Vector3();
+const _миниВКамере = new THREE.Matrix4(), _миниВершина = new THREE.Vector3();
+/* Нижняя плита — визуальный низ всей 3D-миниатюры. Выравниваем его с общей
+   неподвижной нижней линией. Мировой Box3 включает невидимую голограмму
+   и пустые углы вокруг повёрнутой плиты, поэтому оставлял видимый край выше.
+   Берём настоящие вершины и глубину каждой: сдвиг в плоскости камеры
+   сохраняет глубину, так что перспектива учитывается без подбора поправки. */
+function выровнятьНизМини(прогресс){
+  const плита = zones.plast?.subs3d?.[0];
+  if(!state.openId || !плита) return;
+  const вес = плавно(Math.max(0, Math.min(1, (прогресс - .72) / .28)));
+  if(вес === 0) return;
+  world.updateMatrixWorld(true);
+  camera.updateMatrixWorld();
+  const цельNDC = 1 - 2 * (innerHeight - CONTENT_BOTTOM) / innerHeight;
+  const проекция = camera.projectionMatrix.elements;
+  let сдвигВверх = -Infinity;
+  for(const меш of плита.физическиеМеши){
+    _миниВКамере.multiplyMatrices(camera.matrixWorldInverse, меш.matrixWorld);
+    const вершины = меш.geometry.attributes.position;
+    for(let i = 0; i < вершины.count; i++){
+      _миниВершина.fromBufferAttribute(вершины, i).applyMatrix4(_миниВКамере);
+      const глубина = -_миниВершина.z;
+      if(глубина <= 0) continue;
+      // Все вершины должны остаться над линией; крайняя попадёт точно на неё.
+      const сдвиг = (цельNDC + проекция[9]) * глубина / проекция[5] - _миниВершина.y;
+      сдвигВверх = Math.max(сдвигВверх, сдвиг);
+    }
+  }
+  if(!Number.isFinite(сдвигВверх)) return;
+  _up.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+  _miniDelta.copy(_up).multiplyScalar(сдвигВверх * вес);
+  for(const id of RANK_UP) zones[id].scaleG.position.add(_miniDelta);
+  for(const hit of pickMeshes) hit.position.add(_miniDelta);
+  world.updateMatrixWorld(true);
+}
 /* Перелёт (в угол и обратно) идёт не «догоняющим» лерпом, как остальное в
    сцене, а по времени, с плавным стартом и торможением: путь через пол-экрана
    с максимальной скоростью в первом же кадре читался рывком. Отсюда откуда
@@ -1969,7 +2036,7 @@ const RESERVOIR_CONTENT = {
   2:{ images:true, title:'Технико-экономическая оценка' }
 };
 const ZONE_VIDEOS = {
-  skv:{ file:'drillspot_cut.mp4', title:'Цифровой двойник скважины' },
+  skv:{ file:'drillspot_v5.mp4', title:'Цифровой двойник скважины' },
   naz:{ page:'production-monitoring/index.html?focus=wells&v=20260930.3', title:'Интеллектуальное месторождение' }
 };
 const teoImages = [...document.querySelectorAll('#pc-carousel img')];
@@ -2107,6 +2174,7 @@ function openProject(id){
       video.load();
     }
     pc.classList.add('vis');
+    requestAnimationFrame(обновитьЛоготип);
   };
   clearTimeout(contentSwapTimer);
   if(isSwitch){
@@ -2310,6 +2378,15 @@ if (new URLSearchParams(location.search).get('в_рамке') === '1') addEventL
 });
 
 const elStack = document.getElementById('stack');
+const elKmgLogo = document.getElementById('kmg-logo');
+function обновитьЛоготип(){
+  // Размер и положение задаются в #kmg-logo; inline-стили перекрывали ручные правки CSS.
+  const виден = $('project-content').classList.contains('vis')
+    && !document.body.classList.contains('финал');
+  elKmgLogo.classList.toggle('виден', виден);
+  elKmgLogo.setAttribute('aria-hidden', String(!виден));
+}
+addEventListener('resize', обновитьЛоготип);
 const elEffectsOverview = document.querySelector('#effects-overview .cols');
 /* Три «главных» эффекта программы (23.09, Адиль): цифры и подписи взяты с
    плашки ТОП-12 в финале подводки (см. тиражирование.html) — на первом кадре
@@ -2476,6 +2553,7 @@ function refresh(){
   const isFirstMove = replacesStack && !panel.classList.contains('вместо-стека');
   $('stack').classList.remove('скрыт');
   $('stack').classList.toggle('выбран', replacesStack);
+  requestAnimationFrame(обновитьЛоготип);
   if(isFirstMove) panel.classList.remove('vis');
   panel.classList.toggle('вместо-стека', replacesStack);
   // Фиксируем начальную точку слева до .vis, чтобы панель именно встала вверх,
@@ -3253,6 +3331,7 @@ function animate(){
     camera.clearViewOffset();
   }
   camera.updateProjectionMatrix();
+  выровнятьНизМини(transitionProgress);
   renderer.render(scene, camera);
   обновитьМеткиТЭО();
   обновитьГоризонт();
