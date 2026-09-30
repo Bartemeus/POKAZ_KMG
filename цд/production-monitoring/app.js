@@ -19,12 +19,13 @@
             var frameBottom = Math.max(chart.offsetTop + chart.offsetHeight, table.offsetTop + table.offsetHeight);
             var frameWidth = frameRight - frameLeft;
             var frameHeight = frameBottom - frameTop;
-            var scaleX = viewWidth / frameWidth;
-            var scaleY = viewHeight / frameHeight;
-            var left = -frameLeft * scaleX;
-            var top = -frameTop * scaleY;
+            // Один масштаб по обеим осям: график и таблица не растягиваются
+            // на всю ширину iframe с искажением пропорций.
+            var scale = Math.min(viewWidth / frameWidth, viewHeight / frameHeight);
+            var left = (viewWidth - frameWidth * scale) / 2 - frameLeft * scale;
+            var top = (viewHeight - frameHeight * scale) / 2 - frameTop * scale;
             $('.dashboard').css({
-                transform: 'translate(' + left + 'px, ' + top + 'px) scale(' + scaleX + ', ' + scaleY + ')',
+                transform: 'translate(' + left + 'px, ' + top + 'px) scale(' + scale + ')',
                 'transform-origin': 'top left',
                 width: '7680px',
                 height: '2160px'
