@@ -73,7 +73,9 @@ h2.заголовок{font-size:47.5px;font-weight:700;line-height:1.12;margin-t
 [data-к]{opacity:0;transform:translateY(10px);transition:opacity .45s ease, transform .45s cubic-bezier(.2,.7,.3,1)}
 [data-к].включён{opacity:1;transform:none}
 svg [data-к]{transition:opacity .45s ease}
-@media (prefers-reduced-motion: reduce){[data-к]{opacity:1;transform:none;transition:none}}
+/* 29.09: правило «prefers-reduced-motion → показать все кадры сразу» снято. На компьютере стенда в Windows
+   выключены «эффекты анимации», браузер сообщал reduce, и все кадры слайда вставали разом, тексты ложились
+   друг на друга (Адиль: «баг только в одном браузере»). Показ идёт кадрами, они нужны всегда. */
 
 /* ===== общие детали ===== */
 .блок{position:absolute;border:1px solid var(--грань);border-radius:20px;padding:22px 26px 24px;

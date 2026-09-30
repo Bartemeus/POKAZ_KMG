@@ -1,0 +1,625 @@
+'use strict';
+
+const найти = селектор => document.querySelector(селектор);
+const все = селектор => [...document.querySelectorAll(селектор)];
+const пространство = 'http://www.w3.org/2000/svg';
+const создатьSVG = (тег, атрибуты, текст) => {
+  const узел = document.createElementNS(пространство, тег);
+  for (const [ключ, значение] of Object.entries(атрибуты)) узел.setAttribute(ключ, значение);
+  if (текст !== undefined) узел.textContent = текст;
+  return узел;
+};
+
+// Векторные контуры восстановлены по кадру, без исходных геологических данных.
+// Локальный JS хранит SVG-разметку, чтобы карта открывалась также через file://.
+const mapDocument = new DOMParser().parseFromString(window.NUMEX_MAP, 'image/svg+xml');
+найти('#изображение-карты').append(...[...mapDocument.documentElement.children].map(node => document.importNode(node, true)));
+
+// Координаты и размеры интерфейса сняты с кадра 2046 × 1100.
+const строки = [
+  {ключ:'тип', текст:'Тип системы', уровень:0, тип:'выбор', значение:'5-рядная', класс:'тип-системы'},
+  {ключ:'сетка', текст:'Способ задания сетки', ветка:true},
+  {ключ:'плотность-режим', родитель:'сетка', текст:'Плотность сетки, a0/b0', уровень:1, ветка:true, радио:'сетка-режим', отмечено:true},
+  {ключ:'плотность', родитель:'плотность-режим', текст:'Плотность сетки, Га/скв', уровень:3, значение:'2.5'},
+  {ключ:'отношение', родитель:'плотность-режим', текст:'a0/b0', уровень:3, флажок:true, значение:'1.0'},
+  {ключ:'шаги', родитель:'сетка', текст:'a0, b0', уровень:1, ветка:true, радио:'сетка-режим'},
+  {ключ:'a0', родитель:'шаги', текст:'a0, м', уровень:3, значение:'158.11', заблокировано:true},
+  {ключ:'b0', родитель:'шаги', текст:'b0, м', уровень:3, значение:'158.11', заблокировано:true},
+  {ключ:'смещение', текст:'Смещение рядов по гор.', уровень:1, флажок:true, значение:'0.0'},
+  {ключ:'стресс', текст:'Основное напр. стресса, град', уровень:1, значение:'0.0'},
+  {ключ:'трещины', текст:'Направление трещин, град', уровень:1, значение:'0.0'},
+  {ключ:'деформация', текст:'Коэф. деформации сетки', уровень:1, значение:'1.0'},
+  {ключ:'расстояние', текст:'Мин. расстояние между забоями, м', уровень:1, значение:'10.0'},
+  {ключ:'направление', текст:'Направление системы, град', уровень:1, значение:'0.0'},
+  {ключ:'контур', текст:'Контур', ветка:true},
+  {ключ:'произвольный', родитель:'контур', текст:'Произвольный контур: КОНТУР3.TXT', уровень:2, флажок:true, отмечено:true, действие:'Загрузить'},
+  {ключ:'прямоугольный', родитель:'контур', текст:'Прямоугольный контур', уровень:1, ветка:true},
+  {ключ:'ширина', родитель:'прямоугольный', текст:'Ширина, м', уровень:3, значение:'2000.0'},
+  {ключ:'высота', родитель:'прямоугольный', текст:'Высота, м', уровень:3, значение:'2000.0'},
+  {ключ:'центр', родитель:'контур', текст:'Отн. центр расположения скв.', уровень:1, ветка:true},
+  {ключ:'dx', родитель:'центр', текст:'dXc, м', уровень:3, значение:'0.0'},
+  {ключ:'dy', родитель:'центр', текст:'dYc, м', уровень:3, значение:'0.0'},
+  {ключ:'дополнительный', родитель:'контур', текст:'Дополнительный контур: WELL_PLACE_BORDER', уровень:1, ветка:true, флажок:true, отмечено:true, действие:'Загрузить'},
+  {ключ:'автоконтур', родитель:'дополнительный', текст:'Авторасчет контура', уровень:2, ветка:true, флажок:true},
+  {ключ:'радиус', родитель:'автоконтур', текст:'Радиус области, м', уровень:4, значение:'100.0'},
+  {ключ:'fipnum', родитель:'контур', текст:'Расчет FIPNUM', уровень:2, действие:'Расчет'},
+  {ключ:'карты', текст:'Действия с картами', ветка:true, тип:'выбор', значение:'Слой 1'},
+  {ключ:'показ-карты', родитель:'карты', текст:'Отобразить карту', уровень:2, флажок:true, отмечено:true, тип:'выбор', значение:'Из файла: FOIPM_10230.txt'},
+  {ключ:'изолинии', родитель:'карты', текст:'Отобразить изолинии', уровень:2, флажок:true, отмечено:true},
+  {ключ:'построение', родитель:'карты', текст:'Картопостроение', уровень:1, ветка:true, свернуто:true, действие:'Расчет'},
+];
+const шаблоны = ['Шаблон Фетковича 1','Шаблон постоянного давления 1','Шаблон Фетковича 2','Шаблон Фетковича 3','Шаблон Фетковича 4'];
+const исходныеШаблоны = [...шаблоны];
+const скрытые = new Set(['построение']);
+let настоящийРазмер = false;
+const isEmbeddedPresentation = window.parent !== window && new URLSearchParams(location.search).get('в_презентации') === '1';
+let режимКарты = 'панорама';
+let отложенноеСохранениеШаблона = false;
+let обратнаяМатрицаКарты = null;
+
+function подогнатьРазмер() {
+  обратнаяМатрицаКарты = null;
+  const nativeSize = настоящийРазмер && !isEmbeddedPresentation;
+  document.documentElement.classList.toggle('numex-native-size', nativeSize);
+  const scale = nativeSize ? 1 : Math.min(document.documentElement.clientWidth / 2046, document.documentElement.clientHeight / 1100);
+  document.documentElement.style.setProperty('--масштаб', scale);
+  найти('#оболочка').style.width = `${2046 * scale}px`;
+  найти('#оболочка').style.height = `${1100 * scale}px`;
+}
+addEventListener('resize', подогнатьРазмер);
+подогнатьРазмер();
+if (isEmbeddedPresentation) найти('[data-действие="масштаб"]').disabled = true;
+
+function сообщить(текст) {
+  найти('#статус-текст').textContent = текст;
+  найти('#журнал').textContent += `${найти('#журнал').textContent ? '\n' : ''}${текст}`;
+}
+найти('#журнал').textContent = найти('#статус-текст').textContent;
+
+function диалог(название, текст) {
+  отложенноеСохранениеШаблона = false;
+  найти('#диалог').returnValue = '';
+  найти('#название-диалога').textContent = название;
+  найти('#текст-диалога').textContent = текст;
+  найти('#диалог').showModal();
+}
+
+function построитьСтроки() {
+  const таблица = найти('#строки-параметров');
+  for (const строка of строки) {
+    const ряд = document.createElement('tr');
+    ряд.dataset.ключ = строка.ключ;
+    if (строка.класс) ряд.className = строка.класс;
+    const подпись = document.createElement('td');
+    const ячейка = document.createElement('div');
+    ячейка.className = `ячейка уровень-${строка.уровень || 0}`;
+    if (строка.ветка) {
+      const кнопка = document.createElement('button');
+      кнопка.className = 'ветка';
+      кнопка.setAttribute('aria-label', `${строка.текст}: свернуть или развернуть`);
+      кнопка.setAttribute('aria-expanded', !строка.свернуто);
+      кнопка.disabled = строка.ключ === 'построение';
+      if (!кнопка.disabled) кнопка.addEventListener('click', () => {
+        скрытые.has(строка.ключ) ? скрытые.delete(строка.ключ) : скрытые.add(строка.ключ);
+        обновитьГруппы();
+      });
+      ячейка.append(кнопка);
+    }
+    const метка = document.createElement('label');
+    if (строка.заблокировано) метка.classList.add('недоступная-подпись');
+    if (строка.флажок || строка.радио) {
+      const флажок = document.createElement('input');
+      флажок.type = строка.радио ? 'radio' : 'checkbox';
+      флажок.name = строка.радио || `флаг-${строка.ключ}`;
+      флажок.id = `флаг-${строка.ключ}`;
+      флажок.checked = !!строка.отмечено;
+      флажок.disabled = строка.ключ === 'изолинии';
+      флажок.dataset.настройка = флажок.id;
+      метка.append(флажок);
+    } else if (строка.значение !== undefined) метка.htmlFor = `параметр-${строка.ключ}`;
+    метка.append(document.createTextNode(строка.текст));
+    ячейка.append(метка);
+    подпись.append(ячейка);
+    const значение = document.createElement('td');
+    if (строка.тип === 'выбор') {
+      const выбор = document.createElement('select');
+      выбор.id = `параметр-${строка.ключ}`;
+      выбор.setAttribute('aria-label', строка.текст);
+      выбор.dataset.настройка = выбор.id;
+      выбор.add(new Option(строка.значение, строка.значение));
+      выбор.disabled = true;
+      значение.append(выбор);
+    } else if (строка.значение !== undefined) {
+      const поле = document.createElement('input');
+      поле.className = 'значение';
+      поле.id = `параметр-${строка.ключ}`;
+      поле.setAttribute('aria-label', строка.текст);
+      поле.value = строка.значение;
+      поле.inputMode = 'decimal';
+      поле.dataset.настройка = поле.id;
+      поле.disabled = !!строка.заблокировано;
+      значение.append(поле);
+    } else if (строка.действие) {
+      const кнопка = document.createElement('button');
+      кнопка.className = 'действие-ячейки';
+      кнопка.textContent = строка.действие;
+      кнопка.setAttribute('aria-label', `${строка.действие}: ${строка.текст}`);
+      кнопка.disabled = true;
+      значение.append(кнопка);
+    }
+    ряд.append(подпись, значение);
+    таблица.append(ряд);
+  }
+}
+
+function обновитьГруппы() {
+  for (const строка of строки) {
+    let родитель = строка.родитель;
+    let невидим = false;
+    while (родитель) {
+      невидим ||= скрытые.has(родитель);
+      родитель = строки.find(с => с.ключ === родитель)?.родитель;
+    }
+    const ряд = найти(`[data-ключ="${строка.ключ}"]`);
+    ряд.hidden = невидим;
+    ряд.querySelector('.ветка')?.setAttribute('aria-expanded', !скрытые.has(строка.ключ));
+  }
+}
+
+function обновитьСетку() {
+  const вручную = найти('#флаг-шаги').checked;
+  for (const ключ of ['a0', 'b0']) {
+    найти(`#параметр-${ключ}`).disabled = !вручную;
+    найти(`[data-ключ="${ключ}"] label`).classList.toggle('недоступная-подпись', !вручную);
+  }
+  for (const ключ of ['плотность', 'отношение']) найти(`#параметр-${ключ}`).disabled = вручную;
+  if (!вручную) {
+    const плотность = Number(найти('#параметр-плотность').value.replace(',', '.'));
+    const отношение = Number(найти('#параметр-отношение').value.replace(',', '.'));
+    if (плотность > 0 && отношение > 0) {
+      найти('#параметр-a0').value = Math.sqrt(плотность * 10000 * отношение).toFixed(2);
+      найти('#параметр-b0').value = Math.sqrt(плотность * 10000 / отношение).toFixed(2);
+    }
+  }
+}
+
+function показатьШаблоны() {
+  найти('#строки-шаблонов').replaceChildren();
+  шаблоны.forEach((название, индекс) => {
+    const ряд = document.createElement('tr');
+    const номер = document.createElement('td');
+    номер.textContent = индекс + 1;
+    const ячейка = document.createElement('td');
+    const кнопка = document.createElement('button');
+    кнопка.textContent = название;
+    кнопка.addEventListener('click', () => {
+      все('#строки-шаблонов tr').forEach(э => э.setAttribute('aria-selected', э === ряд));
+      сообщить(`Выбран: ${название}`);
+    });
+    ячейка.append(кнопка);
+    ряд.append(номер, ячейка);
+    найти('#строки-шаблонов').append(ряд);
+  });
+}
+построитьСтроки();
+показатьШаблоны();
+
+все('#расчетные-параметры input, #расчетные-параметры select, [form="расчетные-параметры"]').forEach((поле, индекс) => {
+  поле.dataset.настройка = `${поле.name}-${поле.type === 'radio' ? поле.value : индекс}`;
+});
+const параметры = () => Object.fromEntries(все('[data-настройка]').map(поле => [поле.dataset.настройка, ['checkbox','radio'].includes(поле.type) ? поле.checked : поле.value]));
+const исходные = параметры();
+
+function применитьПараметры(значения) {
+  for (const поле of все('[data-настройка]')) {
+    const значение = значения[поле.dataset.настройка];
+    if (значение === undefined) continue;
+    if (['checkbox','radio'].includes(поле.type)) {
+      if (typeof значение !== 'boolean') throw new Error('Флажки должны иметь логическое значение.');
+      поле.checked = значение;
+    } else if (typeof значение === 'string' && значение.length < 500) {
+      if (поле.tagName === 'SELECT' && ![...поле.options].some(о => о.value === значение)) continue;
+      поле.value = значение;
+    }
+  }
+  найти('#флаг-изолинии').checked = true;
+  обновитьСетку();
+  показатьКарту();
+}
+
+function показатьКарту() {
+  const видна = найти('#флаг-показ-карты').checked;
+  найти('#изображение-карты').style.display = видна ? '' : 'none';
+  найти('#цветовая-шкала').style.display = видна ? '' : 'none';
+}
+
+document.addEventListener('change', событие => {
+  const поле = событие.target;
+  if (поле.matches('[data-настройка]')) {
+    обновитьСетку();
+    показатьКарту();
+    сообщить('Параметры изменены.');
+  }
+});
+
+все('.средняя-панель [role=tab]').forEach(вкладка => {
+  вкладка.addEventListener('click', () => {
+    все('.средняя-панель [role=tab]').forEach(э => э.setAttribute('aria-selected', э === вкладка));
+    все('.средняя-панель [role=tabpanel]').forEach(э => э.hidden = э.id !== вкладка.getAttribute('aria-controls'));
+  });
+  вкладка.addEventListener('keydown', событие => {
+    if (['ArrowLeft','ArrowRight'].includes(событие.key)) {
+      событие.preventDefault();
+      const другая = все('.средняя-панель [role=tab]').find(э => э !== вкладка);
+      другая.click(); другая.focus();
+    }
+  });
+});
+
+const значки = {
+  дом:'<path d="M3 10 12 3l9 7v11h-6v-8H9v8H3Z"/>',
+  назад:'<path d="m10 5-7 7 7 7M3 12h18"/>',
+  вперед:'<path d="m14 5 7 7-7 7M3 12h18"/>',
+  панорама:'<path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M3 3l7 7m4 4 7 7M21 3l-7 7m-4 4-7 7"/>',
+  лупа:'<circle cx="10" cy="10" r="7.5"/><path d="m16 16 5 5"/>',
+  сохранить:'<path d="M4 3h14l3 3v15H3V3Z"/><path d="M7 3v6h10V3M7 21V13h10v8"/>',
+  линейка:'<path d="m2 17 15-15 5 5L7 22ZM7 12l3 3m0-6 3 3m0-6 3 3m0-6 3 3"/>',
+  сетка:'<rect x="2" y="2" width="20" height="20"/><path d="m2 7 5-5m10 0 5 5M22 17l-5 5M7 22l-5-5M7 7h10v10H7Zm-5 0 5 0 0-5m10 0v5h5m0 10h-5v5M2 17h5v5"/>',
+  экспорт:'<path d="M12 3H3v18h18v-9M14 3h7v7M21 3 10 14M10 8v6h6"/>',
+  центр:'<path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><circle cx="12" cy="12" r="4"/>',
+  плюс:'<path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5M12 7v10M7 12h10"/>'
+};
+const инструменты = [
+  ['дом','Исходный вид карты','дом'], ['назад','Предыдущий вид','назад'], ['вперед','Следующий вид','вперед'],
+  ['панорама','Перемещение карты','панорама'], ['лупа','Увеличение карты','лупа'], ['сохранить','Сохранить карту SVG','сохранить'],
+  ['линейка','Измерить расстояние','линейка'], ['сетка','Координатная сетка','сетка'], ['экспорт','Открыть векторную карту','экспорт'],
+  ['центр','Центрировать карту','центр'], ['плюс','Увеличить масштаб','плюс']
+];
+инструменты.forEach(([ключ, подпись, значок], индекс) => {
+  if (индекс === 6) {
+    const разделитель = document.createElement('span'); разделитель.className = 'разделитель'; найти('.инструменты').append(разделитель);
+  }
+  const кнопка = document.createElement('button');
+  кнопка.id = `инструмент-${ключ}`;
+  кнопка.title = подпись;
+  кнопка.setAttribute('aria-label', подпись);
+  кнопка.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${значки[значок]}</svg>`;
+  кнопка.addEventListener('click', () => действиеКарты(ключ));
+  найти('.инструменты').append(кнопка);
+});
+
+// Оси откалиброваны по видимым делениям, а не по файлу модели. Измерения —
+// оценка по изображению; данные пласта и единица цветовой шкалы в видео не заданы.
+const исходныйВид = {масштаб:1, x:0, y:0};
+let вид = {...исходныйВид};
+let история = [{...вид}];
+let позицияИстории = 0;
+let сеткаВидна = false;
+const ширинаГрафика = 881, высотаГрафика = 880;
+const единицНаПиксель = 500 / 117.5;
+const xМинимум = 284500 - 113 * единицНаПиксель;
+const yМаксимум = 5293000 + 97 * единицНаПиксель;
+const слойВида = найти('#вид-карты');
+const осиКарты = найти('#оси');
+const назадПоКарте = найти('#инструмент-назад');
+const впередПоКарте = найти('#инструмент-вперед');
+const деленияX = [], деленияY = [];
+const линииСетки = создатьSVG('path', {id:'линии-сетки',stroke:'#9eacc2','stroke-width':.6,'stroke-dasharray':'3 4',fill:'none','pointer-events':'none'});
+найти('#сетка-карты').before(линииСетки);
+осиКарты.append(создатьSVG('text', {x:0,y:-5}, '1e6'));
+let кадрКарты = 0;
+let отрисованныйВид = null;
+let отрисованнаяСетка = null;
+
+function обновитьДеление(список, индекс, позиция, значение, поX) {
+  let деление = список[индекс];
+  if (!деление) {
+    const группа = создатьSVG('g', {});
+    const линия = создатьSVG('line', поX
+      ? {x1:0,y1:880,x2:0,y2:885,stroke:'#111'}
+      : {x1:-5,y1:0,x2:0,y2:0,stroke:'#111'});
+    const подпись = создатьSVG('text', поX
+      ? {x:0,y:901,'text-anchor':'middle'}
+      : {x:-11,y:5,'text-anchor':'end'});
+    группа.append(линия, подпись);
+    осиКарты.append(группа);
+    деление = {группа, подпись};
+    список.push(деление);
+  }
+  деление.группа.style.display = '';
+  деление.группа.setAttribute('transform', поX ? `translate(${позиция} 0)` : `translate(0 ${позиция})`);
+  const текст = String(значение);
+  if (деление.подпись.textContent !== текст) деление.подпись.textContent = текст;
+}
+
+function запомнитьВид() {
+  const прежний = история[позицияИстории];
+  if (JSON.stringify(прежний) !== JSON.stringify(вид)) {
+    история = история.slice(0, позицияИстории + 1);
+    история.push({...вид}); позицияИстории++;
+  }
+  обновитьВид();
+}
+function обновитьВид() {
+  // Колесо и тачпад могут прислать несколько событий за один экранный кадр.
+  // Геометрию рисуем один раз, а деления осей переиспользуем вместо пересоздания.
+  if (!кадрКарты) кадрКарты = requestAnimationFrame(отрисоватьВид);
+}
+function отрисоватьВид() {
+  кадрКарты = 0;
+  назадПоКарте.disabled = позицияИстории === 0;
+  впередПоКарте.disabled = позицияИстории === история.length - 1;
+  const преобразование = `translate(${вид.x} ${вид.y}) scale(${вид.масштаб})`;
+  if (преобразование === отрисованныйВид && сеткаВидна === отрисованнаяСетка) return;
+  слойВида.setAttribute('transform', преобразование);
+  отрисованныйВид = преобразование;
+  отрисованнаяСетка = сеткаВидна;
+  const диапазон = 881 * единицНаПиксель / вид.масштаб;
+  const шаг = диапазон < 1200 ? 100 : диапазон < 2500 ? 250 : диапазон < 6000 ? 500 : 1000;
+  const слева = xМинимум - вид.x / вид.масштаб * единицНаПиксель;
+  const сверху = yМаксимум + вид.y / вид.масштаб * единицНаПиксель;
+  const сетка = [];
+  let числоX = 0, числоY = 0;
+  for (let x = Math.ceil(слева / шаг) * шаг; x < слева + диапазон; x += шаг) {
+    const позиция = ((x - xМинимум) / единицНаПиксель) * вид.масштаб + вид.x;
+    обновитьДеление(деленияX, числоX++, позиция, Math.round(x), true);
+    if (сеткаВидна) сетка.push(`M${позиция},0V880`);
+  }
+  for (let y = Math.floor(сверху / шаг) * шаг; y > сверху - диапазон; y -= шаг) {
+    const позиция = ((yМаксимум - y) / единицНаПиксель) * вид.масштаб + вид.y;
+    if (позиция < 0 || позиция > 880) continue;
+    обновитьДеление(деленияY, числоY++, позиция, (y / 1e6).toFixed(4), false);
+    if (сеткаВидна) сетка.push(`M0,${позиция}H881`);
+  }
+  деленияX.slice(числоX).forEach(д => д.группа.style.display = 'none');
+  деленияY.slice(числоY).forEach(д => д.группа.style.display = 'none');
+  if (сеткаВидна) линииСетки.setAttribute('d', сетка.join(''));
+  линииСетки.style.display = сеткаВидна ? '' : 'none';
+}
+function отрисоватьСразу() {
+  if (кадрКарты) cancelAnimationFrame(кадрКарты);
+  отрисоватьВид();
+}
+for (let значение = 0; значение <= 8; значение += 2) {
+  const y = 244 - значение * 24.25;
+  найти('#метки-шкалы').append(создатьSVG('line', {x1:40,y1:y,x2:45,y2:y,stroke:'#111','stroke-width':.7}), создатьSVG('text', {x:50,y:y+5}, значение));
+}
+обновитьВид();
+
+function масштабировать(множитель, x=440.5, y=440) {
+  const новый = Math.max(.55, Math.min(12, вид.масштаб * множитель));
+  if (новый === вид.масштаб) return;
+  const отношение = новый / вид.масштаб;
+  вид.x = x - (x - вид.x) * отношение;
+  вид.y = y - (y - вид.y) * отношение;
+  вид.масштаб = новый;
+  найти('#измерение').replaceChildren();
+  обновитьВид();
+}
+function установитьРежим(режим) {
+  режимКарты = режим;
+  найти('#карта').classList.toggle('линейка', режим === 'линейка');
+  найти('#карта').classList.toggle('увеличение', режим === 'лупа');
+  for (const ключ of ['панорама','лупа','линейка']) найти(`#инструмент-${ключ}`).setAttribute('aria-pressed', ключ === режим);
+  началоИзмерения = null;
+  найти('#измерение').replaceChildren();
+}
+function скачать(содержимое, имя, тип) {
+  const ссылка = document.createElement('a');
+  const адрес = URL.createObjectURL(содержимое instanceof Blob ? содержимое : new Blob([содержимое], {type:тип}));
+  ссылка.href = адрес; ссылка.download = имя; ссылка.click();
+  setTimeout(() => URL.revokeObjectURL(адрес), 5000);
+}
+function сохранитьКарту() {
+  // Экспорт может быть нажат до ближайшего кадра отложенной перерисовки.
+  отрисоватьСразу();
+  const копия = найти('#карта').cloneNode(true);
+  копия.setAttribute('xmlns', пространство); копия.setAttribute('width','1230'); копия.setAttribute('height','944');
+  копия.removeAttribute('tabindex');
+  копия.querySelector('#map-zoom-box')?.remove();
+  копия.querySelectorAll('.подписи-осей').forEach(э => э.setAttribute('style','font:15px Arial,sans-serif;fill:#111'));
+  const текст = new XMLSerializer().serializeToString(копия);
+  скачать(текст, 'NUMEX-map.svg', 'image/svg+xml;charset=utf-8');
+  сообщить('Карта сохранена: NUMEX-map.svg');
+}
+function действиеКарты(ключ) {
+  cancelMapGesture();
+  if (ключ === 'дом' || ключ === 'центр') {вид={...исходныйВид};найти('#измерение').replaceChildren();запомнитьВид();}
+  if (ключ === 'назад' && позицияИстории > 0) {вид={...история[--позицияИстории]};найти('#измерение').replaceChildren();обновитьВид();}
+  if (ключ === 'вперед' && позицияИстории < история.length-1) {вид={...история[++позицияИстории]};найти('#измерение').replaceChildren();обновитьВид();}
+  if (['панорама','лупа','линейка'].includes(ключ)) установитьРежим(ключ);
+  if (ключ === 'плюс') {масштабировать(1.3);запомнитьВид();}
+  if (ключ === 'сетка') {сеткаВидна=!сеткаВидна;найти('#инструмент-сетка').setAttribute('aria-pressed',сеткаВидна);обновитьВид();}
+  if (ключ === 'экспорт') window.open('NUMEX/map.svg','_blank','noopener');
+  if (ключ === 'сохранить') сохранитьКарту();
+}
+
+const карта = найти('#карта');
+addEventListener('scroll', () => обратнаяМатрицаКарты = null, true);
+function точкаНаКарте(событие) {
+  // Корневой SVG неподвижен во время жеста: повторное чтение матрицы после
+  // изменения дочерних путей заставляло браузер синхронно обновлять раскладку.
+  if (!обратнаяМатрицаКарты) обратнаяМатрицаКарты = карта.getScreenCTM().inverse();
+  const точка = new DOMPoint(событие.clientX, событие.clientY).matrixTransform(обратнаяМатрицаКарты);
+  return {x:точка.x-212,y:точка.y-21};
+}
+const внутри = точка => точка.x >= 0 && точка.x <= ширинаГрафика && точка.y >= 0 && точка.y <= высотаГрафика;
+const координата = точка => ({x:xМинимум+(точка.x-вид.x)/вид.масштаб*единицНаПиксель, y:yМаксимум-(точка.y-вид.y)/вид.масштаб*единицНаПиксель});
+let перетаскивание = null;
+let началоИзмерения = null;
+let ожиданиеКолеса = null;
+let zoomGesture = null;
+const zoomBox = document.querySelector('#map-zoom-box');
+const clampPlotPoint = point => ({x:Math.max(0, Math.min(881, point.x)), y:Math.max(0, Math.min(880, point.y))});
+function cancelMapGesture() {
+  завершитьКолесо();
+  const pointerId = zoomGesture?.pointerId ?? перетаскивание?.pointerId;
+  if (перетаскивание) запомнитьВид();
+  zoomGesture = null;
+  перетаскивание = null;
+  zoomBox.setAttribute('hidden', '');
+  карта.classList.remove('перетаскивание');
+  if (pointerId !== undefined && карта.hasPointerCapture(pointerId)) карта.releasePointerCapture(pointerId);
+  обратнаяМатрицаКарты = null;
+}
+function updateZoomBox(point) {
+  const end = clampPlotPoint(point);
+  zoomGesture.end = end;
+  zoomBox.removeAttribute('hidden');
+  for (const [name, value] of Object.entries({x:Math.min(end.x,zoomGesture.start.x),y:Math.min(end.y,zoomGesture.start.y),width:Math.abs(end.x-zoomGesture.start.x),height:Math.abs(end.y-zoomGesture.start.y)})) zoomBox.setAttribute(name,value);
+}
+function finishZoomBox(event) {
+  if (!zoomGesture || event.pointerId !== zoomGesture.pointerId) return;
+  const gesture = zoomGesture;
+  const end = clampPlotPoint(точкаНаКарте(event));
+  const width = Math.abs(end.x - gesture.start.x), height = Math.abs(end.y - gesture.start.y);
+  zoomGesture = null;
+  zoomBox.setAttribute('hidden', '');
+  if (width < 6 && height < 6) {
+    масштабировать(gesture.zoomOut ? 1/1.5 : 1.5, gesture.start.x, gesture.start.y);
+  } else if (width >= 8 && height >= 8) {
+    const factor = Math.min(881 / width, 880 / height);
+    const nextScale = Math.max(.55, Math.min(12, вид.масштаб * (gesture.zoomOut ? 1 / factor : factor)));
+    const ratio = nextScale / вид.масштаб;
+    const center = {x:(end.x+gesture.start.x)/2,y:(end.y+gesture.start.y)/2};
+    вид.x = 440.5 - (center.x - вид.x) * ratio;
+    вид.y = 440 - (center.y - вид.y) * ratio;
+    вид.масштаб = nextScale;
+    найти('#измерение').replaceChildren();
+  }
+  if (карта.hasPointerCapture(event.pointerId)) карта.releasePointerCapture(event.pointerId);
+  запомнитьВид();
+}
+function завершитьКолесо() {
+  if (ожиданиеКолеса === null) return;
+  clearTimeout(ожиданиеКолеса);
+  ожиданиеКолеса = null;
+  запомнитьВид();
+}
+карта.addEventListener('pointerdown', событие => {
+  завершитьКолесо();
+  обратнаяМатрицаКарты = null;
+  const точка = точкаНаКарте(событие);
+  if (!внутри(точка) || событие.button !== 0) return;
+  if (режимКарты === 'лупа') {
+    zoomGesture = {start:точка,end:точка,pointerId:событие.pointerId,zoomOut:событие.shiftKey};
+    карта.setPointerCapture(событие.pointerId);
+    событие.preventDefault();
+    return;
+  }
+  if (режимКарты === 'линейка') {
+    if (!началоИзмерения) {началоИзмерения=точка;найти('#измерение').replaceChildren();}
+    else {нарисоватьИзмерение(точка);началоИзмерения=null;}
+    return;
+  }
+  перетаскивание={...точка,вид:{...вид},pointerId:событие.pointerId};
+  карта.setPointerCapture(событие.pointerId);
+  карта.classList.add('перетаскивание');
+});
+function нарисоватьИзмерение(точка) {
+  const а=началоИзмерения,б=точка;
+  const длина=Math.hypot(б.x-а.x,б.y-а.y)/вид.масштаб*единицНаПиксель;
+  найти('#измерение').replaceChildren(
+    создатьSVG('line',{x1:а.x,y1:а.y,x2:б.x,y2:б.y,stroke:'#b71939','stroke-width':2,'stroke-dasharray':'5 3'}),
+    создатьSVG('circle',{cx:а.x,cy:а.y,r:4,fill:'#b71939'}),
+    создатьSVG('circle',{cx:б.x,cy:б.y,r:4,fill:'#b71939'}),
+    создатьSVG('text',{x:(а.x+б.x)/2,y:(а.y+б.y)/2-10,'text-anchor':'middle',fill:'#9d0025',stroke:'white','stroke-width':4,'paint-order':'stroke',style:'font:15px Arial'},`≈ ${длина.toFixed(1)} м`)
+  );
+  сообщить(`Расстояние по изображению: ≈ ${длина.toFixed(1)} м. Оценка по делениям осей.`);
+}
+карта.addEventListener('pointermove', событие => {
+  const точка=точкаНаКарте(событие);
+  if (внутри(точка)) {const к=координата(точка);найти('#координаты').textContent=`x=${Math.round(к.x)}. y=${Math.round(к.y)}.`;}
+  if (zoomGesture) {
+    if (событие.pointerId === zoomGesture.pointerId) updateZoomBox(точка);
+  } else if (перетаскивание) {
+    вид.x=перетаскивание.вид.x+точка.x-перетаскивание.x;
+    вид.y=перетаскивание.вид.y+точка.y-перетаскивание.y;
+    найти('#измерение').replaceChildren();обновитьВид();
+  } else if (началоИзмерения) нарисоватьИзмерение(точка);
+});
+function отпустить(event) {if(zoomGesture)finishZoomBox(event);else if(перетаскивание)cancelMapGesture();}
+карта.addEventListener('pointerup',отпустить);
+карта.addEventListener('pointercancel',cancelMapGesture);
+карта.addEventListener('lostpointercapture',()=>{if(zoomGesture||перетаскивание)cancelMapGesture();});
+карта.addEventListener('wheel',событие=>{
+  if (!Number.isFinite(событие.deltaY) || событие.deltaY === 0) return;
+  const точка=точкаНаКарте(событие);if(!внутри(точка))return;
+  событие.preventDefault();
+  if (zoomGesture || перетаскивание) cancelMapGesture();
+  const единица = событие.deltaMode === 1 ? 16 : событие.deltaMode === 2 ? карта.clientHeight : 1;
+  const сдвиг = Math.max(-240, Math.min(240, событие.deltaY * единица));
+  масштабировать(Math.exp(-сдвиг * Math.log(1.12) / 100), точка.x, точка.y);
+  clearTimeout(ожиданиеКолеса);ожиданиеКолеса=setTimeout(завершитьКолесо,180);
+},{passive:false});
+карта.addEventListener('dblclick',()=>действиеКарты('дом'));
+карта.addEventListener('keydown',событие=>{
+  if(!['+','=','-','Home','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(событие.key)) return;
+  событие.preventDefault();
+  завершитьКолесо();
+  if(['+','='].includes(событие.key)) масштабировать(1.2);
+  if(событие.key==='-') масштабировать(1/1.2);
+  if(событие.key==='Home')вид={...исходныйВид};
+  if(событие.key==='ArrowLeft')вид.x+=35;if(событие.key==='ArrowRight')вид.x-=35;
+  if(событие.key==='ArrowUp')вид.y+=35;if(событие.key==='ArrowDown')вид.y-=35;
+  запомнитьВид();
+});
+
+function закрытьМеню() {все('.выпадающее').forEach(э=>э.hidden=true);все('[data-меню]').forEach(э=>э.setAttribute('aria-expanded','false'));}
+все('[data-меню]').forEach(кнопка=>кнопка.addEventListener('click',событие=>{
+  событие.stopPropagation();const открыть=найти(`#${кнопка.dataset.меню}`).hidden;закрытьМеню();
+  найти(`#${кнопка.dataset.меню}`).hidden=!открыть;кнопка.setAttribute('aria-expanded',открыть);
+}));
+document.addEventListener('click',событие=>{if(!событие.target.closest('.пункт-меню'))закрытьМеню();});
+const действия = {
+  сохранить(){скачать(JSON.stringify({приложение:'NUMEX — воспроизведение',версия:1,источник:'NUMEX walkthrough 2026-09-27',параметры:параметры(),шаблоны,workspace:window.NUMEXWorkspace?.getState()},null,2),'NUMEX-parameters.json','application/json');сообщить('Параметры сохранены: NUMEX-parameters.json');},
+  открыть(){найти('#загрузка-параметров').click();},
+  исходные(){применитьПараметры(исходные);шаблоны.splice(0,шаблоны.length,...исходныеШаблоны);показатьШаблоны();скрытые.clear();скрытые.add('построение');обновитьГруппы();действиеКарты('дом');window.NUMEXWorkspace?.resetState();сообщить('Восстановлены значения из видео.');},
+  масштаб(){настоящийРазмер=!настоящийРазмер;подогнатьРазмер();найти('[data-действие="масштаб"]').textContent=`Масштаб интерфейса: ${настоящийРазмер?'100%':'по размеру окна'}`;},
+  async 'полный-экран'(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{сообщить('Полноэкранный режим недоступен в этом окне.');}},
+  'сброс-карты'(){действиеКарты('дом');},
+  справка(){диалог('Nedra.NUMEX', 'Девять разделов воспроизведены по видеозаписям NUMEX.\n\nВыбор проекта переключает параметры, проектные скважины и результаты из project.json / project2.json. Вариант можно выбрать и в разделе «Результаты, графики». Файл → Открыть проект / параметры позволяет загрузить исходный JSON NUMEX. Кнопки расчета показывают сохраненные результаты выбранного проекта; изменение параметров не запускает новый гидродинамический расчет.\n\nКарта: колесо — масштаб, перетаскивание — перемещение, двойной щелчок или Home — исходный вид. Лупа: выделите прямоугольник для увеличения; Shift + щелчок уменьшает. Кнопки «Назад» и «Вперед» возвращают предыдущие виды. Линейка: две точки для оценки расстояния.\n\nСохранить / Ctrl+S выгружает состояние демонстрации: параметры, сценарии, выбранный проект и графики. Исходные файлы не изменяются. Карта сохраняется в SVG.');},
+  консоль(){const консоль=найти('#консоль');консоль.hidden=!консоль.hidden;найти('.статус [data-действие="консоль"]').textContent=консоль.hidden?'Показать консоль':'Скрыть консоль';},
+  шаблон(){диалог('Создать шаблон','Название шаблона');const поле=document.createElement('input');поле.id='имя-шаблона';поле.setAttribute('aria-label','Название шаблона');поле.maxLength=120;поле.value=`Шаблон ${шаблоны.length+1}`;найти('#текст-диалога').append(поле);отложенноеСохранениеШаблона=true;поле.focus();поле.select();}
+};
+все('[data-действие]').forEach(кнопка=>кнопка.addEventListener('click',()=>{закрытьМеню();действия[кнопка.dataset.действие]?.();}));
+найти('#диалог').addEventListener('close',()=>{
+  if(отложенноеСохранениеШаблона&&найти('#диалог').returnValue==='ok'){
+    const имя=найти('#имя-шаблона')?.value.trim();if(имя){шаблоны.push(имя);показатьШаблоны();сообщить(`Создан шаблон: ${имя}`);}
+  }
+  отложенноеСохранениеШаблона=false;найти('#диалог').returnValue='';
+});
+найти('#загрузка-параметров').addEventListener('change',async событие=>{
+  const файл=событие.target.files[0];if(!файл)return;
+  try{
+    if(файл.size>64*1024*1024)throw new Error('Файл больше 64 МБ.');
+    const данные=JSON.parse((await файл.text()).replace(/^\uFEFF/, ''));
+    if (данные && typeof данные === 'object' && данные.sysdevdata && данные.resdata) {
+      window.NUMEXProjects.importProject(данные, файл.name);
+      событие.target.value='';
+      return;
+    }
+    if(данные.версия!==1||!данные.параметры||typeof данные.параметры!=='object'||Array.isArray(данные.параметры))throw new Error('Нужен файл параметров, сохраненный с этой страницы.');
+    if(данные.шаблоны!==undefined&&(!Array.isArray(данные.шаблоны)||данные.шаблоны.length>100||данные.шаблоны.some(с=>typeof с!=='string'||с.length>120)))throw new Error('Некорректный список шаблонов.');
+    // Проверка до изменения формы не оставляет частично примененный файл.
+    for(const поле of все('[data-настройка]')){const з=данные.параметры[поле.dataset.настройка];if(з===undefined)continue;if(['checkbox','radio'].includes(поле.type)?typeof з!=='boolean':typeof з!=='string'||з.length>=500)throw new Error('Некорректное значение параметра.');}
+    if (данные.workspace !== undefined) window.NUMEXWorkspace.validateState(данные.workspace);
+    if (данные.workspace !== undefined) window.NUMEXWorkspace.setState(данные.workspace);
+    применитьПараметры(данные.параметры);
+    if(данные.шаблоны){шаблоны.splice(0,шаблоны.length,...данные.шаблоны);показатьШаблоны();}
+    сообщить(`Открыты параметры: ${файл.name}`);
+  }catch(ошибка){диалог('Не удалось открыть параметры',ошибка.message);}
+  событие.target.value='';
+});
+document.addEventListener('keydown',событие=>{
+  if(событие.key==='Escape'){
+    const локальноеДействие = !!найти('dialog[open]') || все('.выпадающее').some(э=>!э.hidden) || найти('#измерение').childElementCount > 0 || началоИзмерения !== null || zoomGesture !== null || перетаскивание !== null;
+    cancelMapGesture();
+    закрытьМеню();началоИзмерения=null;найти('#измерение').replaceChildren();
+    if(!локальноеДействие && window.parent !== window && new URLSearchParams(location.search).get('в_презентации') === '1') {
+      parent.postMessage({тип:'NUMEX:закрыть'}, location.origin === 'null' ? '*' : location.origin);
+    }
+  }
+  if((событие.ctrlKey||событие.metaKey)&&событие.key.toLowerCase()==='s'){событие.preventDefault();действия.сохранить();}
+});
+window.NUMEXCore = {report:сообщить, cancelMapGesture, applyParameters:применитьПараметры, getParameters:параметры};
