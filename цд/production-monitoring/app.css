@@ -26,8 +26,11 @@ body {
     height: 2160px !important;
 }
 
-/* The v5 live tab frames just the well table from the wide offline dashboard. */
+/* The focused live tab frames the production chart and well table together. */
 html.wells-focus,html.wells-focus body{overflow:hidden!important}
+html.wells-focus .dashboard>.header,
+html.wells-focus .dashboard>.monitoring-buttons,
+html.wells-focus .dashboard>.widget:not([widget-id="a1"]):not(#normativeTable){display:none!important}
 html.wells-focus #normativeTable .widget-inner{scrollbar-width:none}
 html.wells-focus #normativeTable .widget-inner::-webkit-scrollbar{display:none}
 html.wells-focus .normative-cell.focus-muted-red{background:#873b40!important}
