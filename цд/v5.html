@@ -52,6 +52,13 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #stack.выбран #navdot{box-shadow:0 0 0 3px rgba(5,8,16,.9);transition:none}
 #stack.выбран #navfill{transition:none}
 #stack.скрыт{opacity:0;pointer-events:none;transform:translateY(calc(-50% - 14px))}
+/* Справа контент занимает 70vw; центр оставшейся левой панели — 15vw.
+   Половину ширины самого логотипа компенсируем независимо от его размера. */
+#kmg-logo{position:fixed;left:15vw;top:155px;transform:translateX(-50%);z-index:10;width:150px;height:auto;
+  opacity:0;pointer-events:none;filter:url(#kmg-светлый);
+  transition:opacity .4s ease}
+#kmg-logo.виден{opacity:1}
+body.финал #kmg-logo{opacity:0}
 /* линия процесса: связывает все контуры и шаги в одну цепочку */
 #navline{position:absolute;left:12px;top:20px;bottom:20px;width:2px;background:rgba(140,170,210,.22);border-radius:2px}
 #navline::after{content:'';position:absolute;left:-4px;bottom:-10px;
@@ -152,51 +159,34 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
   font-size:26px;cursor:pointer;line-height:1}
 #p-close:hover{color:var(--txt)}
 
-/* Верхняя лента ключевых эффектов: три карточки под H1, циан-акцентом слева.
-   Подзаголовка нет — сам H1 работает как заголовок кадра (23.09, Адиль).
-   Держим ленту в коридоре между стопкой контуров (слева) и справкой о В.
-   Молдабеке (справа): справка сама шириной до 660px, отступ 26 от края,
-   +14 воздуха — итого 700 справа; слева хватает и голого края экрана. */
-#effects-overview{position:fixed;top:112px;left:26px;right:calc(min(660px,34vw) + 40px);
-  z-index:9;padding:0;pointer-events:none;
-  transition:opacity .28s ease,transform .42s cubic-bezier(.2,.8,.2,1)}
-#effects-overview.скрыт{opacity:0;transform:translateY(-12px)}
-/* «У стека» — то же три эффекта, но вертикальной колонкой над раскрывашками
-   контуров слева. Позиционирует JS (`positionEffectsOverview`), а сеткой
-   переключаемся здесь: у-стека → 1 столбец, идут одной колонкой сверху вниз. */
-#effects-overview.у-стека{padding:0;transform:none;left:auto;right:auto;top:auto}
-#effects-overview .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-#effects-overview .effect-col{padding:13px 17px;background:var(--glass);border:1px solid var(--line);
-  border-left:3px solid var(--ec);backdrop-filter:blur(8px)}
+/* Ключевые эффекты — только финальный кадр (30.09, Адиль): пирога, списка слева и
+   карточек на нём нет, два блока стоят друг над другом строго по центру экрана.
+   Раньше это была лента под заголовком на всех кадрах («Топ 12 · более 90 %»
+   с самого первого экрана) — убрана: на первом кадре её быть не должно, а на
+   промежуточных она бы появлялась из ниоткуда и исчезала на финале.
+   Показывает контейнер body.финал, прячет — его отсутствие. Шрифт — одна
+   переменная --эф на все значения («Топ 12», «Более 90 %», «2 864 тыс. тонн»,
+   «326 млрд ₸»): на пустом экране можно крупно, растёт с шириной экрана. */
+:root{--эф:clamp(36px,3.4vw,84px)}
+#effects-overview{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;
+  pointer-events:none}
+body.финал #effects-overview{display:flex}
+#effects-overview .cols{display:flex;flex-direction:column;align-items:center;gap:clamp(18px,3.4vh,48px)}
+#effects-overview .effect-col{padding:.3em .8em;background:var(--glass);border:1px solid var(--line);
+  border-left:4px solid var(--ec);backdrop-filter:blur(8px);text-align:center;font-size:var(--эф)}
+body.финал #effects-overview .effect-col{animation:эф_вход .75s cubic-bezier(.2,.8,.2,1) both}
+body.финал #effects-overview .effect-col:nth-child(1){animation-delay:.35s}
+body.финал #effects-overview .effect-col:nth-child(2){animation-delay:.55s}
+@keyframes эф_вход{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 #effects-overview .items{display:block}
-/* В карточке может стоять один пункт или несколько. Пункты идут строкой
-   вниз (`.items` = block). Внутри пункта значение и подпись — на одной
-   строке (`.item` = flex row): «2 864 тыс. тонн» с подписью «доп. добычи»
-   справа, а «326 млрд ₸» — без подписи, отдельной строкой ниже. */
-#effects-overview .items{display:block}
-#effects-overview .item{display:flex;align-items:baseline;gap:12px;min-width:0;flex-wrap:wrap}
-#effects-overview .item + .item{margin-top:5px}
-/* 24.09 (Адиль): три ключевых эффекта сверху были 24 px — терялись рядом с
-   карточкой «Первый актив». Подняли до 40 px, справку ужали.
-   25.09 (Адиль, «пусть чуть меньше, наезжает на 3D»): 40 → 32 px — плашки
-   стали ниже, «тортик» под ними снова читается целиком.
-   25.09 (Адиль, вторая правка): плашки оставить того же размера (padding
-   13/17), но шрифт внутри поднять и уйти с cyan на белый — цвет плашек
-   сливается с фоном стенда. 32 → 36 у цифры, 17 → 18 у подписи,
-   color: --ec (cyan) → #F2F7FF (белый), font-weight 700 остался.
-   Акцент удерживается синей полосой слева у .effect-col — сам текст
-   больше не борется с фоном за читаемость. */
-#effects-overview .v{font-family:var(--mono);font-size:36px;font-weight:700;line-height:1.05;color:#F2F7FF;
-  flex:0 0 auto;white-space:nowrap}
-#effects-overview .l{font-size:18px;line-height:1.3;color:var(--dim)}
-/* Вертикальная колонка у стопки: чуть крупнее самих раскрывашек (у них .t = 21.5px),
-   чтобы главные эффекты вылавливались с зала раньше названий контуров. */
-#effects-overview.у-стека .cols{grid-template-columns:1fr;gap:8px}
-#effects-overview.у-стека .effect-col{padding:11px 13px;border-left-width:3px;
-  background:linear-gradient(180deg,rgba(14,25,43,.95),rgba(8,15,27,.92));box-shadow:0 10px 26px rgba(0,0,0,.18)}
-#effects-overview.у-стека .item{gap:12px}
-#effects-overview.у-стека .v{font-size:23px}
-#effects-overview.у-стека .l{font-size:16px}
+/* В блоке два пункта друг под другом. Внутри пункта значение и подпись стоят на
+   одной строке: «Топ 12» — «месторождений», «Более 90 %» — «добычи». */
+#effects-overview .item{display:flex;align-items:baseline;justify-content:center;gap:.28em;min-width:0;flex-wrap:wrap}
+#effects-overview .item + .item{margin-top:.12em}
+#effects-overview .v{font-family:var(--mono);font-size:1em;font-weight:700;line-height:1.1;color:#F2F7FF;
+  flex:0 1 auto;max-width:100%}
+#effects-overview .effect-col:nth-child(2) .item:first-child .v{color:var(--ec)}
+#effects-overview .l{font-size:.5em;line-height:1.3;color:var(--dim)}
 
 /* дорожная карта скрыта по решению от 12.08 — вернуть: display:flex вместо none */
 #road{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10;align-items:center;gap:0;
@@ -238,70 +228,57 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--ui);color:var
 #эффекты .rd .d{font-size:17px;color:#9DB4CE;margin-top:2px}
 #demo2{display:none}
 /* карточка пилотного актива — та же, что в подводке (demo_with_map.html), тем же слотом справа */
-/* 24.09 (Адиль, замечание после выкладки): справочная карточка была шире и
-   крупнее, чем главные эффекты сверху, — акцент смещался на актив.
-   max-width 660 → 560, шрифты немного ужаты. */
-#справка{position:fixed;right:26px;top:50%;transform:translateY(-50%) translateX(40px);width:30vw;min-width:400px;max-width:560px;
-  max-height:86vh;z-index:11;padding:18px 22px 18px;overflow:hidden auto;
+/* 30.09 (Адиль, скрины со стенда): обе правые карточки — «Первый актив» и «ТОП-12» —
+   на большом экране читаются мелко. Размеры теперь не в пикселях, а в em от
+   --сп: переменная растёт с шириной экрана, но упирается и в высоту — иначе
+   карточка, вытянутая по шрифту, вылезла бы за край (она стоит по центру,
+   max-height 86vh). Проверял по замерам на 1366×768, 1600×900, 1920×1080 и
+   2000×1023. Значения строк в «Первом активе» равны названию актива («м/р
+   «Восточный Молдабек»») — по просьбе: «текстовка размером как это название».
+   Отклонено: фиксированные 28 px у значений — на 1600×900 карточка в 9 строк
+   уходила за нижний край. */
+:root{--сп:clamp(17px,min(1.25vw,2.45vh),30px)}
+#справка{position:fixed;right:26px;top:50%;transform:translateY(-50%) translateX(40px);width:36vw;min-width:440px;max-width:720px;
+  max-height:86vh;z-index:11;padding:.75em .9em;overflow:hidden auto;font-size:var(--сп);
   background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));border:1px solid rgba(140,170,210,.16);
   opacity:0;transition:opacity .5s,transform .6s cubic-bezier(.22,.61,.36,1);pointer-events:none}
 #справка.on{opacity:1;transform:translateY(-50%);pointer-events:auto}
-/* 28.09 (Адиль): «шрифты в карточке маловаты для большого экрана» —
-   поднимаем ключ, значение, шапку и подпись на ~2px. Ширину блока
-   не трогаем: max-width уже 560, дальше он полезет на сам пирог. */
-#справка .hd{font-family:var(--mono);font-size:18px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
-#справка .nm{font-family:var(--serif);font-size:28px;color:#F2F7FF;line-height:1.15;border-top:2px solid var(--cyan);padding-top:12px}
-#справка .sub{font-size:19px;color:#9DB4CE;margin-top:6px;line-height:1.35}
-#справка .ярус{margin-top:12px;padding-top:10px;border-top:1px solid rgba(140,170,210,.16);opacity:0;transform:translateY(10px);
+#справка .hd{font-family:var(--mono);font-size:.72em;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:.5em}
+#справка .nm{font-family:var(--serif);font-size:1em;color:#F2F7FF;line-height:1.15;border-top:2px solid var(--cyan);padding-top:.5em}
+#справка .sub{font-size:.8em;color:#9DB4CE;margin-top:.3em;line-height:1.35}
+#справка .ярус{margin-top:.55em;padding-top:.45em;border-top:1px solid rgba(140,170,210,.16);opacity:0;transform:translateY(10px);
   transition:opacity .5s cubic-bezier(.22,.61,.36,1),transform .5s cubic-bezier(.22,.61,.36,1)}
 #справка .ярус.on{opacity:1;transform:none}
 #справка .ярус:empty{display:none}
-#справка .rw{display:flex;gap:12px;padding:5px 0;border-bottom:1px solid rgba(140,170,210,.09);opacity:0;transform:translateY(10px);transition:opacity .4s ease-out,transform .4s ease-out}
+#справка .rw{display:flex;gap:.5em;padding:.26em 0;border-bottom:1px solid rgba(140,170,210,.09);opacity:0;transform:translateY(10px);transition:opacity .4s ease-out,transform .4s ease-out}
 #справка .ярус.on .rw{opacity:1;transform:none}
 #справка .rw:last-child{border-bottom:0}
-#справка .rw .k{font-family:var(--mono);font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:#7C8DA6;flex:0 0 40%;line-height:1.35}
-#справка .rw .v{font-size:19px;color:#DCE7F5;line-height:1.35}
+#справка .rw .k{font-family:var(--mono);font-size:.68em;letter-spacing:.08em;text-transform:uppercase;color:#7C8DA6;flex:0 0 36%;line-height:1.35;align-self:center}
+#справка .rw .v{font-size:1em;color:#DCE7F5;line-height:1.25}
 /* 25.09 (Адиль, замечание): КИН и МРП стояли особняком с бирюзовой рамкой и
    serif-цифрой — рядом с остальными строками смотрелись как «отдельная секция»,
    хотя это те же данные пилота. Возвращаем их в общий регистр: тот же mono ключ,
    та же подпись справа. Класс «эффект» с данных снят, стили ниже больше не
    применяются, но оставляем как ноль-специфик — если снова понадобится подсветить. */
-#справка .rw.эффект{padding:5px 0;border-left:0;background:none;margin-left:0}
-#справка .rw.эффект .k{font-family:var(--mono);font-size:16px;letter-spacing:.08em;
+#справка .rw.эффект{padding:.26em 0;border-left:0;background:none;margin-left:0}
+#справка .rw.эффект .k{font-family:var(--mono);font-size:.68em;letter-spacing:.08em;
   text-transform:uppercase;color:#7C8DA6;font-weight:400;line-height:1.35}
-#справка .rw.эффект .v{font-size:19px;color:#DCE7F5;align-self:auto;line-height:1.35}
-#справка .гр{padding:0 0 6px;font-family:var(--mono);font-size:15.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan)}
-#справка .src{margin-top:10px;font-family:var(--mono);font-size:15.5px;letter-spacing:.08em;color:#5E7089}
-/* 28.09 (Адиль): в финальном кадре карточка «Первый актив» справа заменяется
-   на блок «ТОП-12 месторождений» (данные из подводки demo_with_map.html).
-   Позиционируется той же плашкой справа-по-центру, что и #справка, — чтобы
-   при переключении блока пользователь оставался в том же слоте кадра. */
-#топ12{position:fixed;right:26px;top:50%;transform:translateY(-50%) translateX(40px);width:32vw;min-width:420px;max-width:600px;
-  max-height:86vh;z-index:11;padding:20px 24px;overflow:hidden auto;
-  background:linear-gradient(180deg,rgba(6,11,20,.96),rgba(4,8,15,.985));border:1px solid rgba(140,170,210,.16);
-  opacity:0;transition:opacity .5s,transform .6s cubic-bezier(.22,.61,.36,1);pointer-events:none}
-#топ12.on{opacity:1;transform:translateY(-50%);pointer-events:auto}
-/* 28.09 (Адиль): «шрифты в ТОП-12 маловаты» — те же ~2px на все
-   уровни, ширина без изменения. */
-#топ12 .kicker{font-family:var(--mono);font-size:18px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
-#топ12 h3{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1.15;color:#F2F7FF;margin:0}
-#топ12 .lead{font-size:19px;color:#9DB4CE;margin-top:8px;padding-bottom:14px;border-bottom:1px solid rgba(140,170,210,.16)}
-#топ12 .lead b{color:var(--cyan);font-weight:700}
-#топ12 .обл{margin-top:14px}
-#топ12 .обл .нм{font-family:var(--mono);font-size:16px;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin-bottom:4px}
-#топ12 .обл .комп{font-size:15.5px;color:#7C8DA6;line-height:1.4;margin-bottom:6px}
-#топ12 .обл .мест{font-size:18px;color:#DCE7F5;line-height:1.5;padding:8px 12px;border-left:2px solid rgba(79,227,255,.35);background:rgba(79,227,255,.04);border-radius:0 8px 8px 0}
+#справка .rw.эффект .v{font-size:1em;color:#DCE7F5;align-self:auto;line-height:1.25}
+#справка .гр{padding:0 0 .3em;font-family:var(--mono);font-size:.64em;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan)}
 /* ко второй части показа — скрыта по решению от 14.08; вернуть: убрать display:none */
 #next{display:none;left:26px;bottom:22px}
 /* 25.09: кнопка возвращена — справа-сверху, чтобы не спорить с блоком
    ключевых эффектов слева и не наезжать на карточку «Первый актив» справа
    в раскрытом виде. */
 #pilot{right:26px;top:22px}
-/* 28.09 (Адиль): «в финальном кадре кнопки ТОП-12 не нужно, блок пусть
-   появляется сам». После первого закрытия слоя ставим body.финал, и
-   кнопка pilot прячется — блок #топ12 всё равно открывается сам из
-   finishClosing (см. window.__открытьТоп12). */
-body.финал #pilot{display:none}
+/* Финальный кадр (30.09, Адиль): «пирога на экране не будет, справа блока про
+   12 месторождений и слева раскладки по ЦД пласта, скважины — тоже; только два
+   ключевых эффекта по центру». Пирог не убираем из сцены, а гасим: так возврат
+   с финала на слой (кнопки внизу, ←) не пересобирает сцену. Заголовок H1 и
+   нижняя панель страниц остаются — это рамка показа, а не содержимое кадра. */
+#scene{transition:opacity .6s ease}
+body.финал #scene{opacity:0;pointer-events:none}
+body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,#horiz,#naz-lbl){display:none !important}
 /* 29.09 (Адиль): внизу — кнопки 1–8, переходы на страницы показа (см. флоу
    в конце файла). Активная подсвечена тем же циан, что и кнопки сверху. */
 #страницы{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:17;display:flex;gap:6px;
@@ -314,7 +291,7 @@ body.финал #pilot{display:none}
 /* 25.09: подсветка ключевых цифр в паспорте актива (36,7 % и 14,8 млн тонн)
    — заказчик просил «как-то выделить». Тот же циан, что у главных эффектов
    и линии процесса, чтобы не изобретать своего цвета. */
-#справка .rw.акцент .v{color:var(--cyan);font-family:var(--mono);font-weight:700;font-size:21px;
+#справка .rw.акцент .v{color:var(--cyan);font-family:var(--mono);font-weight:700;font-size:1em;
   /* 25.09 (Адиль, «добавь эффект/анимацию, чтоб цифры подсвечивались при
      рассказе»): мягкий пульс свечения — глаз ловит цифру, но она не мигает
      резко и не отвлекает во время речи. Останавливаем анимацию при
@@ -359,21 +336,9 @@ body.финал #pilot{display:none}
 #naz-lbl.on{opacity:1}
 
 /* отметка бурящейся скважины */
-#drill{position:fixed;z-index:11;pointer-events:none;opacity:0;transition:opacity .3s;
-  transform:translate(12px,-50%);display:flex;align-items:center;gap:7px;
-  font-family:var(--mono);font-size:17px;letter-spacing:.14em;text-transform:uppercase;
-  color:#EAF2FF;background:rgba(8,14,26,.85);border:1px solid var(--viol);
-  border-left:3px solid var(--viol);padding:4px 9px;backdrop-filter:blur(4px);white-space:nowrap}
-#drill.on{opacity:1}
-#drill .pt{width:6px;height:6px;border-radius:50%;background:var(--viol);
-  animation:бур 1.1s ease-in-out infinite}
-/* проходка: моноширинные цифры, иначе счётчик дёргает подпись при каждом тике */
-#drill .m{font-weight:600;color:#fff;font-variant-numeric:tabular-nums;
-  border-left:1px solid rgba(155,123,232,.5);padding-left:7px;margin-left:1px}
-
-/* отметка горизонтального бурения — тот же язык, но подпись под носком ствола.
-   Рамка стальная, а не фиолетовая: фиолет в слое означает действующий фонд, а
-   тут идёт та же стройка, что и в центре. */
+/* отметка горизонтального бурения — подпись под носком ствола.
+   Рамка стальная, а не фиолетовая: фиолет в слое означает действующий фонд.
+   (30.09: парная подпись «идёт бурение» у вертикальной скважины снята.) */
 #horiz{position:fixed;z-index:11;pointer-events:none;opacity:0;transition:opacity .3s;
   transform:translate(-50%,16px);display:flex;align-items:center;gap:7px;
   font-family:var(--mono);font-size:17px;letter-spacing:.14em;text-transform:uppercase;
@@ -434,9 +399,9 @@ body.финал #pilot{display:none}
 #pc-kick{font-family:var(--mono);font-size:18px;letter-spacing:.3em;text-transform:uppercase;color:var(--pc,#4FE3FF)}
 #pc-name{font-family:var(--serif);font-size:52px;font-weight:600;line-height:1.2;max-width:26ch}
 #pc-claim{font-size:23px;color:var(--dim);line-height:1.6;max-width:52ch}
-#pc-video{display:none;width:100%;max-height:62vh;object-fit:contain;background:#02040A;
+#pc-video{display:none;width:100%;height:62vh;flex-shrink:0;object-fit:contain;background:#02040A;
   border:1px solid var(--line);border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 18px 46px rgba(0,0,0,.32)}
-#pc-carousel{display:none;position:relative;width:100%;aspect-ratio:2046 / 1100;max-height:62vh;
+#pc-carousel{display:none;position:relative;width:100%;height:62vh;flex-shrink:0;
   overflow:hidden;background:#02040A;border:1px solid var(--line);
   border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 18px 46px rgba(0,0,0,.32)}
 #pc-carousel img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
@@ -463,14 +428,16 @@ body.финал #pilot{display:none}
   aspect-ratio:20/9;object-fit:cover;background:#02040A;border:1px solid var(--line);
   border-top:2px solid var(--pc,#4FE3FF);box-shadow:0 14px 38px rgba(0,0,0,.38)}
 #project-content.с-tumar #pc-tumar{display:block}
-#project-content.с-tumar #pc-name{max-width:calc(100% - min(20vw,400px) - 36px)}
+#project-content.с-tumar #pc-name{max-width:none;white-space:nowrap}
 #video-preloaders{position:fixed;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none}
 /* padding-top отведён под шапку кадра (см. #hdr: top:22, ~54 высоты + запас):
    H1 постоянно висит в левом верхнем углу и, если бы pc-name стартовал по
    умолчанию с 64px, они сталкивались бы в углу — теперь заголовок системы
    уезжает под H1 и не наезжает на него. */
-#project-content:is(.с-видео,.с-системой,.с-карусель){padding-top:96px;padding-bottom:42px;gap:12px}
+#project-content:is(.с-видео,.с-системой,.с-карусель){padding-top:96px;padding-bottom:var(--content-bottom,60px);gap:12px}
+#project-content:is(.с-видео,.с-карусель){justify-content:flex-end}
 #project-content:is(.с-видео,.с-системой,.с-карусель) #pc-name{font-size:38px}
+#project-content.с-tumar.с-видео #pc-name{font-size:clamp(16px,2vw,38px)}
 /* 24.09 (Адиль): убраны кнопка «← к цифровому двойнику» и жёлтый кикер
    «ЦД … · проект NN» на карточке системы. Возврат идёт единственной
    кнопкой в нижнем левом углу у миниатюры 3D (см. #mini-reset). Разметка
@@ -479,15 +446,22 @@ body.финал #pilot{display:none}
 #project-content:is(.с-видео,.с-системой,.с-карусель) :is(#pc-claim,#pc-badge,#pc-back,#pc-kick){display:none}
 #project-content.с-видео #pc-video{display:block}
 #project-content.с-системой #pc-system{display:block}
+#pc-system-header{display:contents}
+#pc-system-header left-head-btns{display:none}
+#project-content.с-системой{padding:96px 0 var(--content-bottom,60px);gap:0;justify-content:flex-end;overflow:hidden}
+#project-content.с-системой #pc-system-header{display:flex;align-items:center;gap:20px;
+  width:min(92%,1280px);align-self:center;padding-bottom:18px;flex-shrink:0}
+#project-content.с-системой #pc-system-header left-head-btns{display:block}
+#project-content.с-системой #pc-name{width:auto;align-self:auto;padding:0;flex:1;max-width:none}
+#project-content.с-системой #pc-system{width:min(92%,1280px);align-self:center;height:62vh;min-height:0;max-height:none;aspect-ratio:auto;flex:0 0 62vh}
 #project-content.с-карусель #pc-carousel{display:block}
-/* Кнопка возврата к первому кадру. Стоит у 3D-модели в нижнем левом углу:
-   миниатюра занимает `--mini-width × --мини-высота` от MINI_MARGIN, кнопка
-   ложится сразу справа от миниатюры (23.09, Адиль — «возврат у 3D-модели»).
+/* Кнопка возврата к первому кадру. Стоит у 3D-модели в левом углу:
+   по горизонтали идёт за `--mini-width`, снизу держит общий с контентом отступ.
    Прежние 25vw уводили её то внутрь миниатюры на узком мониторе, то далеко
    от неё на широком: считаем от габарита самой миниатюры, а не от окна. */
 #mini-reset{position:fixed;z-index:16;
   left:calc(var(--mini-margin,34px) + var(--mini-width,35.1vh) + 12px);
-  bottom:var(--mini-margin,34px);
+  bottom:var(--content-bottom,60px);
   width:44px;height:44px;display:grid;place-items:center;transform:translateX(32px);
   border:1px solid var(--line);border-left:2px solid var(--cyan);background:rgba(10,18,32,.88);
   color:var(--txt);font-family:var(--mono);font-size:22px;cursor:pointer;backdrop-filter:blur(8px);
@@ -497,6 +471,7 @@ body.финал #pilot{display:none}
 #pc-badge{align-self:flex-start;font-family:var(--mono);font-size:15px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--amber);border:1px solid rgba(240,174,74,.5);padding:7px 14px;margin-top:8px}
 </style>
+<script type="module" src="./v5/left-head-btns.js"></script>
 </head>
 <body>
 
@@ -511,16 +486,28 @@ body.финал #pilot{display:none}
   <h1>Цифровой двойник с применением <b style="color:var(--cyan)">ИИ</b></h1>
 </div>
 
+<!-- Белая копия силуэта делает тёмные части читаемыми; поверх остаются исходные синие пиксели. -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden">
+  <defs>
+    <filter id="kmg-светлый" color-interpolation-filters="sRGB">
+      <feColorMatrix in="SourceGraphic" type="matrix" result="синяя-маска"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -2 0 2 0 -.2"/>
+      <feComposite in="SourceGraphic" in2="синяя-маска" operator="in" result="синее"/>
+      <feFlood flood-color="white" result="белое"/>
+      <feComposite in="белое" in2="SourceAlpha" operator="in" result="белый-силуэт"/>
+      <feMerge><feMergeNode in="белый-силуэт"/><feMergeNode in="синее"/></feMerge>
+    </filter>
+  </defs>
+</svg>
+<img id="kmg-logo" src="kmg_3.png" alt="КазМунайГаз" aria-hidden="true">
 <div id="stack" class="слева">
   <div id="navline"><div id="navfill"></div><div id="navdot"></div></div>
 </div>
 
-<!-- 23.09 (Адиль): под H1 стоят три «главных» эффекта программы, а не эффекты
-     по контурам. Прежние −5%/−3% ушли в панель контура справа (см. #panel),
-     наверху остаётся тот же язык, что и на финале подводки: ТОП-12 · более 90 %
-     добычи · 2 864 тыс. тонн (см. тиражирование.html, плашка ТОП-12). Подзаголовка
-     «Ожидаемые эффекты по контурам» больше нет — сам заголовок H1 работает как
-     заголовок кадра. -->
+<!-- 30.09 (Адиль): ключевые эффекты живут только на финальном кадре — по центру
+     пустого экрана, без пирога, списка слева и карточек. На остальных кадрах
+     их нет (раньше «Топ 12 · более 90 %» висели над списком с первого экрана).
+     Показывает и прячет их body.финал, см. CSS. -->
 <section id="effects-overview" aria-label="Ключевые эффекты программы">
   <div class="cols"></div>
 </section>
@@ -554,51 +541,31 @@ body.финал #pilot{display:none}
 <button id="pilot" type="button"><span>Первый актив</span><span class="arw">→</span></button>
 <div id="справка"><div class="hd"></div><div class="nm"></div><div class="sub"></div>
   <div class="паспорт ярус"></div><div class="сделано ярус"></div></div>
-<!-- 28.09 (Адиль): справа в финальном кадре — блок «ТОП-12 месторождений»
-     (в каких активах внедряем ЦД). Данные — из подводки demo_with_map.html,
-     без блока эффектов (пользователь оставил только карточку месторождений). -->
-<div id="топ12">
-  <div class="kicker">2026–2028</div>
-  <h3>ТОП-12 месторождений КМГ</h3>
-  <div class="lead">обеспечивают <b>более 90 %</b> добычи</div>
-  <div class="обл"><div class="нм">Атырауская область</div>
-    <div class="комп">АО «Эмбамунайгаз»</div>
-    <div class="мест">м/р «Восточный Молдабек» · м/р «С. Нуржанов»</div></div>
-  <div class="обл"><div class="нм">Мангистауская область</div>
-    <div class="комп">АО «Озенмунайгаз» · АО «Мангистаумунайгаз» · АО «Каражанбасмунай»</div>
-    <div class="мест">м/р «Узень» · м/р «Карамандыбас» · м/р «Каламкас» · м/р «Жетыбай» · м/р «Каражанбас» · м/р «Асар»</div></div>
-  <div class="обл"><div class="нм">Актюбинская область</div>
-    <div class="комп">ТОО «Казахтуркмунай» · ТОО «Казахойл Актобе»</div>
-    <div class="мест">м/р «Каратобе Южное» · м/р «Алибекмола» · м/р «Кожасай»</div></div>
-  <div class="обл"><div class="нм">Кызылординская область</div>
-    <div class="комп">ТОО «СП Казгермунай»</div>
-    <div class="мест">м/р «Акшабулак Центральный»</div></div>
-</div>
 <div id="эффекты"><div class="hd"></div><div class="body"></div><div class="road"></div></div>
 <div id="chip"></div>
 <!-- подписи точек бурения: HTML поверх сцены, чтобы цифры оставались чёткими -->
 <div id="teo"></div>
-<div id="drill"><span class="pt"></span>идёт бурение<b class="m">—</b></div>
 <div id="horiz"><span class="pt"></span>горизонтальное бурение</div>
 <div id="naz-lbl"></div>
 <aside id="project-content">
   <button id="pc-back">← к цифровому двойнику</button>
   <div id="pc-kick"></div>
-  <div id="pc-name"></div>
+  <div id="pc-system-header">
+    <div id="pc-name"></div>
+  </div>
   <div id="pc-claim"></div>
   <video id="pc-video" controls autoplay muted loop playsinline preload="auto"></video>
   <div id="pc-carousel" role="region" aria-label="Кадры технико-экономической оценки">
-    <img src="нюмекс2.png" alt="Технико-экономическая оценка — кадр 1" class="active">
-    <img src="нюмекс1.png" alt="Технико-экономическая оценка — кадр 2">
-    <img src="нюмекс4.png" alt="Технико-экономическая оценка — кадр 3">
+    <img src="../медиа/нюмекс5.png" alt="Технико-экономическая оценка — кадр 1" class="active">
+    <img src="../медиа/нюмекс6.png" alt="Технико-экономическая оценка — кадр 2">
     <button id="pc-carousel-expand" type="button" aria-label="Открыть кадр на весь экран" title="Открыть кадр на весь экран">⛶</button>
     <button id="pc-carousel-prev" type="button" aria-label="Предыдущий кадр">‹</button>
     <button id="pc-carousel-next" type="button" aria-label="Следующий кадр">›</button>
-    <span id="pc-carousel-count" aria-live="polite">1 / 3</span>
+    <span id="pc-carousel-count" aria-live="polite">1 / 2</span>
   </div>
   <video id="pc-tumar" src="tumar_new.mp4?v=faststart-1" controls muted loop playsinline preload="auto"
     aria-label="TUMAR"></video>
-  <iframe id="pc-system" title="NUMEX — Технико-экономическая оценка" allow="fullscreen"></iframe>
+  <iframe id="pc-system" title="Интеллектуальное месторождение — график добычи и фонд скважин" allow="fullscreen"></iframe>
   <div id="pc-badge">заготовка · наполнение позже</div>
 </aside>
 <!-- В показе переключение должно быть мгновенным даже без интернета,
@@ -606,8 +573,7 @@ body.финал #pilot{display:none}
      со страницей. TUMAR уже грузится своим видимым #pc-tumar. -->
 <div id="video-preloaders" aria-hidden="true">
   <video src="numex_opt.mp4" preload="auto" muted playsinline></video>
-  <video src="drillspot_cut.mp4" preload="auto" muted playsinline></video>
-  <video src="im.mp4" preload="auto" muted playsinline></video>
+  <video src="drillspot_v5.mp4" preload="auto" muted playsinline></video>
 </div>
 <button id="mini-reset" type="button" aria-label="Вернуть исходный вид" title="Вернуть исходный вид">↩</button>
 
@@ -1677,7 +1643,8 @@ async function build(){
         restHit.position.y = (st+sb)/2 + REST_OFFSET.plast;
         world.add(restHit);
         restPickMeshes.push(restHit);
-        z.subs3d.push({ wrap, physMats, wireMats, holo:hb.userData.parts, st, sb, hit, off:0, mix:0 });
+        const физическиеМеши = g.children.filter(n => n.isMesh && physMats.includes(n.material));
+        z.subs3d.push({ wrap, физическиеМеши, physMats, wireMats, holo:hb.userData.parts, st, sb, hit, off:0, mix:0 });
       }
       z.столбы = []; z.узлыСтолбов = [];
       собратьСтолбы(z.scaleG, yb, yt, FOOT, DEPTH, ZONES.plast.color, z.столбы, z.узлыСтолбов);
@@ -1732,12 +1699,21 @@ async function build(){
       ];
       WELLS.sort((a, b) => a.x - b.x);
       const R_PIPE = 4.2;
-      const БУРИТСЯ = 1;                       // средняя скважина — в бурении
+      /* 30.09 (Адиль): «убрать анимацию вертикального бурения, оставить только
+         горизонталку». Средняя скважина раньше бурилась вертикально: светлая
+         оболочка, продолжение ствола, долото с шламом и подпись «идёт бурение»
+         со счётчиком проходки. Всё это снято целиком — у неё остаётся только
+         чёрная обсадка из самой модели. Отклонено: оставить вертикальное долото
+         без подписи — одинокая штанга с долотом без пояснения читается как
+         недорисованная. Левая скважина (фиолетовое свечение действующего фонда)
+         и правая (горизонтальная) не тронуты. */
+      const БЕЗ_БУРЕНИЯ = 1;
       const ГОРИЗОНТ = 2;                      // правая — горизонтальный ствол
       z.wellMats = [];
       WELLS.forEach((скв, wi) => {
+        if(wi === БЕЗ_БУРЕНИЯ) return;
         const {x:wx, z:wz, y0, y1, rx, rz} = скв;
-        const вБурении = (wi === БУРИТСЯ || wi === ГОРИЗОНТ);
+        const вБурении = (wi === ГОРИЗОНТ);
         const wm = вБурении
           ? new THREE.MeshStandardMaterial({ color:'#9AA5B4', roughness:0.5, metalness:0.25,
               transparent:true, opacity:0, emissive:new THREE.Color('#38414F'), emissiveIntensity:0.4,
@@ -1765,30 +1741,7 @@ async function build(){
           z.scaleG.add(ring);
         }
 
-        // долото на забой — чуть ниже подошвы слоя, в просвет: там его видно;
-        // шлам поднимается по стволу до кровли слоя
-        if(wi === БУРИТСЯ){
-          /* Продолжение идёт от нижнего торца обсадки до корпуса долота.
-             Раньше корпус начинался сразу под основной трубой и давал форму
-             «гриба»; ещё более старая длинная штанга, наоборот, торчала выше
-             слоя. Здесь отдельный прямой участок соединяет их без обоих
-             дефектов и остаётся строго на оси фактического GLB-узла. */
-          const ПРОДОЛЖЕНИЕ = 22;
-          const продолжение = new THREE.Mesh(
-            new THREE.CylinderGeometry(1, 1, ПРОДОЛЖЕНИЕ, 20), wm);
-          продолжение.scale.set(rx*1.18, 1, rz*1.18);
-          продолжение.position.set(wx, y0 - ПРОДОЛЖЕНИЕ/2, wz);
-          продолжение.renderOrder = 6;
-          z.scaleG.add(продолжение);
-
-          const R_ДОЛОТА = R_PIPE*2.3;
-          // верх корпуса долота = 2,25R от начала его локальной группы
-          const yДолота = y0 - ПРОДОЛЖЕНИЕ - R_ДОЛОТА*2.25 + 1;
-          z.бурение = собратьДолото(z.scaleG, wx, yДолота, wz,
-                                   R_ДОЛОТА, (yt - yb) + 12, null, true);
-        }
-
-        /* Горизонтальный ствол — вторая бурящаяся скважина. Одной кривой от
+        /* Горизонтальный ствол — единственная бурящаяся скважина. Одной кривой от
            кровли слоя: вертикаль, длинный набор угла и лежачая часть со своим
            долотом на забое.
 
@@ -1877,6 +1830,8 @@ build().catch(e => { document.getElementById('loadmsg').textContent = 'Ошиб�
    ИНТЕРАКЦИЯ
    ================================================================ */
 const state = { hover:null, hoverSub:null, locked:null, launching:null, closing:null, openId:null, camAz:0, camRadius:0, launchRadius:0, launchPolar:0, launchAt:0, closeAt:0, viewShiftX:0, viewShiftTargetX:0, viewShiftОт:0, переходАт:0 };
+// Сохраняем масштаб обзора до выбора слоя, чтобы вернуть его после закрытия списка.
+let радиусДоВыбора = null;
 // РАСКРЫТА объявлена выше, у pickMeshes: она нужна ещё в build() для вычисляемых там restPickMeshes
 const panelState = { zone:null, sub:null };
 const active = () => state.locked || state.hover;
@@ -1912,21 +1867,20 @@ const УХОД_ВНИЗ = 260;          // и вниз, в тот же угол 
    высоты окна, потому что и сама модель на экране растёт вместе с ней.
    MINI_HEIGHT_RATIO ещё и отдана панели через CSS-переменную: панель не
    должна заезжать в угол, поэтому её max-height считается от неё же. */
-/* 28.09 (Адиль): «мини наезжает на левую панель — размести пирог в
-   изначальном кадре немного выше». Уменьшил ratio 0.56 → 0.44 и
-   поднял нижний отступ на 32 → 52 px: mini центр уезжает выше, и
-   между низом стека (top:50% + translateY(-50%) + высота списка) и
-   верхним краем мини остаётся зазор. Плиты остаются читаемыми — три
-   слоя по-прежнему разделены. */
-const MINI_SCALE = 0.38;
-const MINI_HEIGHT_RATIO = 0.44;
+/* Нижняя линия контента и 3D фиксирована и не зависит от загрузки видео.
+   Миниатюра уменьшена настолько, чтобы после выравнивания низа она не
+   заходила на список слоёв. */
+const MINI_SCALE = 0.31;
+const MINI_HEIGHT_RATIO = 0.36;
 const MINI_ASPECT_RATIO = 0.90;
 const MINI_MARGIN = 52;
+const CONTENT_BOTTOM = 60;
 const MINI_TRANSITION_MS = 900;
 document.documentElement.style.setProperty('--мини-высота', (MINI_HEIGHT_RATIO*100) + 'vh');
 document.documentElement.style.setProperty('--mini-width', (MINI_HEIGHT_RATIO*MINI_ASPECT_RATIO*100) + 'vh');
 document.documentElement.style.setProperty('--mini-half-height', (MINI_HEIGHT_RATIO*50) + 'vh');
 document.documentElement.style.setProperty('--mini-margin', MINI_MARGIN + 'px');
+document.documentElement.style.setProperty('--content-bottom', CONTENT_BOTTOM + 'px');
 const _forward = new THREE.Vector3(), _right = new THREE.Vector3(), _up = new THREE.Vector3(), _cameraToStack = new THREE.Vector3();
 /* Куда сдвинуть стопку в мире, чтобы её центр встал в центр углового места.
    Сдвиг идёт строго в плоскости, перпендикулярной взгляду камеры (вправо и
@@ -1937,7 +1891,8 @@ const _forward = new THREE.Vector3(), _right = new THREE.Vector3(), _up = new TH
 function getMiniStackOffset(out){
   const W = innerWidth, H = innerHeight;
   const boxHeight = H*MINI_HEIGHT_RATIO, boxWidth = boxHeight*MINI_ASPECT_RATIO;
-  const centerX = MINI_MARGIN + boxWidth/2, centerY = H - MINI_MARGIN - boxHeight/2;
+  const centerX = MINI_MARGIN + boxWidth/2;
+  const centerY = H - CONTENT_BOTTOM - boxHeight/2;
   camera.getWorldDirection(_forward);
   _right.crossVectors(_forward, camera.up).normalize();
   _up.crossVectors(_right, _forward);
@@ -1949,6 +1904,42 @@ function getMiniStackOffset(out){
   return out.set(0, 0, 0).addScaledVector(_right, moveRight).addScaledVector(_up, moveUp);
 }
 const _miniOffset = new THREE.Vector3();
+const _miniDelta = new THREE.Vector3();
+const _миниВКамере = new THREE.Matrix4(), _миниВершина = new THREE.Vector3();
+/* Нижняя плита — визуальный низ всей 3D-миниатюры. Выравниваем его с общей
+   неподвижной нижней линией. Мировой Box3 включает невидимую голограмму
+   и пустые углы вокруг повёрнутой плиты, поэтому оставлял видимый край выше.
+   Берём настоящие вершины и глубину каждой: сдвиг в плоскости камеры
+   сохраняет глубину, так что перспектива учитывается без подбора поправки. */
+function выровнятьНизМини(прогресс){
+  const плита = zones.plast?.subs3d?.[0];
+  if(!state.openId || !плита) return;
+  const вес = плавно(Math.max(0, Math.min(1, (прогресс - .72) / .28)));
+  if(вес === 0) return;
+  world.updateMatrixWorld(true);
+  camera.updateMatrixWorld();
+  const цельNDC = 1 - 2 * (innerHeight - CONTENT_BOTTOM) / innerHeight;
+  const проекция = camera.projectionMatrix.elements;
+  let сдвигВверх = -Infinity;
+  for(const меш of плита.физическиеМеши){
+    _миниВКамере.multiplyMatrices(camera.matrixWorldInverse, меш.matrixWorld);
+    const вершины = меш.geometry.attributes.position;
+    for(let i = 0; i < вершины.count; i++){
+      _миниВершина.fromBufferAttribute(вершины, i).applyMatrix4(_миниВКамере);
+      const глубина = -_миниВершина.z;
+      if(глубина <= 0) continue;
+      // Все вершины должны остаться над линией; крайняя попадёт точно на неё.
+      const сдвиг = (цельNDC + проекция[9]) * глубина / проекция[5] - _миниВершина.y;
+      сдвигВверх = Math.max(сдвигВверх, сдвиг);
+    }
+  }
+  if(!Number.isFinite(сдвигВверх)) return;
+  _up.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+  _miniDelta.copy(_up).multiplyScalar(сдвигВверх * вес);
+  for(const id of RANK_UP) zones[id].scaleG.position.add(_miniDelta);
+  for(const hit of pickMeshes) hit.position.add(_miniDelta);
+  world.updateMatrixWorld(true);
+}
 /* Перелёт (в угол и обратно) идёт не «догоняющим» лерпом, как остальное в
    сцене, а по времени, с плавным стартом и торможением: путь через пол-экрана
    с максимальной скоростью в первом же кадре читался рывком. Отсюда откуда
@@ -2045,8 +2036,8 @@ const RESERVOIR_CONTENT = {
   2:{ images:true, title:'Технико-экономическая оценка' }
 };
 const ZONE_VIDEOS = {
-  skv:{ file:'drillspot_cut.mp4', title:'Цифровой двойник скважины' },
-  naz:{ file:'im.mp4', title:'Интеллектуальное месторождение' }
+  skv:{ file:'drillspot_v5.mp4', title:'Цифровой двойник скважины' },
+  naz:{ page:'production-monitoring/index.html?focus=wells&v=20260930.3', title:'Интеллектуальное месторождение' }
 };
 const teoImages = [...document.querySelectorAll('#pc-carousel img')];
 const teoCarousel = document.getElementById('pc-carousel');
@@ -2142,7 +2133,6 @@ function openProject(id){
   // Справка о В. Молдабеке уходит на время раскрытия слоя: место справа занято
   // содержимым слоя, а сама справка вернётся при закрытии (см. closeProject).
   if(window.__закрытьСправку) window.__закрытьСправку();
-  if(window.__закрытьТоп12) window.__закрытьТоп12();
   if(!isSwitch) запомнитьОткуда();
   const pc = $('project-content');
   const populateContent = () => {
@@ -2163,6 +2153,7 @@ function openProject(id){
     pc.classList.toggle('с-карусель', Boolean(videoData?.images));
     if(videoData?.images) showTeoImage(0);
     if(videoData?.page){
+      система.title = videoData.title;
       if(система.getAttribute('src') !== videoData.page) система.setAttribute('src', videoData.page);
     } else if(система.hasAttribute('src')) система.removeAttribute('src');
     pc.classList.toggle('с-tumar', показыватьTumar);
@@ -2183,6 +2174,7 @@ function openProject(id){
       video.load();
     }
     pc.classList.add('vis');
+    requestAnimationFrame(обновитьЛоготип);
   };
   clearTimeout(contentSwapTimer);
   if(isSwitch){
@@ -2262,10 +2254,11 @@ function closeProject(){
 
   closeT1 = setTimeout(finishClosing, ЗАКРЫТИЕ_МС);
 }
-/* v5: откат такта «назад» с первого слоя закрывает слой, но в финальный вид
-   (ТОП-12, расширенные эффекты) попадать не должен — там нужен кадр «Первый
-   актив», каким он был до открытия слоя. Флаг ставит сценарий внизу файла. */
-let возвратБезФинала = null;   // 'справка' — вернуть карточку «Первый актив»; 'начало' — ничего не открывать
+/* v5 (30.09): финал — не «возврат из слоя», а отдельный пустой кадр с двумя
+   ключевыми эффектами, он включается только сценарием (см. применитьФинал).
+   Закрытие слоя — стрелкой ↩, Esc или кнопками внизу — возвращает на голый
+   первый кадр; сценарий может попросить вместо него карточку «Первый актив». */
+let возвратКуда = null;   // 'справка' — вернуть карточку «Первый актив»
 function finishClosing(){
   if(!state.closing) return;
   $('pc-system').removeAttribute('src');
@@ -2274,27 +2267,16 @@ function finishClosing(){
   controls.autoRotate = true;
   controls.enabled = true;
   refresh();
-  if(возвратБезФинала){
-    const куда = возвратБезФинала;
-    возвратБезФинала = null;
-    if(куда === 'справка' && window.__открытьСправку) window.__открытьСправку();
-    return;
-  }
-  применитьФинал();
+  const куда = возвратКуда;
+  возвратКуда = null;
+  if(куда === 'справка' && window.__открытьСправку) window.__открытьСправку();
 }
+/* Финал: body.финал гасит пирог, список слева, карточки и кнопку (см. CSS) и
+   показывает два блока ключевых эффектов по центру. */
+const вФинале = () => document.body.classList.contains('финал');
 function применитьФинал(){
-  /* 28.09 (Адиль): «в финальном кадре вместо блока про первый актив покажем
-     ТОП-12 месторождений, где мы внедряем ЦД». После первого возврата из
-     слоя карточка «Первый актив» справа не всплывает — вместо неё
-     открывается #топ12 (список 12 месторождений по областям).
-     Одновременно ключевые эффекты сверху разворачиваются в «финальный»
-     набор: 2 864 тыс. тонн доп. добычи · 326 млрд ₸ · 3–5 % от EBITDA.
-     Один раз переключаем и уже не возвращаемся к первому виду. */
-  эффектыФиналВид = true;
-  document.body.classList.add('финал');   // прячет #pilot — блок ТОП-12 появляется без кнопки
-  рендерЭффекты();
+  document.body.classList.add('финал');
   if(window.__закрытьСправку) window.__закрытьСправку();
-  if(window.__открытьТоп12) window.__открытьТоп12();
 }
 document.getElementById('pc-back').addEventListener('click', closeProject);
 
@@ -2396,6 +2378,15 @@ if (new URLSearchParams(location.search).get('в_рамке') === '1') addEventL
 });
 
 const elStack = document.getElementById('stack');
+const elKmgLogo = document.getElementById('kmg-logo');
+function обновитьЛоготип(){
+  // Размер и положение задаются в #kmg-logo; inline-стили перекрывали ручные правки CSS.
+  const виден = $('project-content').classList.contains('vis')
+    && !document.body.classList.contains('финал');
+  elKmgLogo.classList.toggle('виден', виден);
+  elKmgLogo.setAttribute('aria-hidden', String(!виден));
+}
+addEventListener('resize', обновитьЛоготип);
 const elEffectsOverview = document.querySelector('#effects-overview .cols');
 /* Три «главных» эффекта программы (23.09, Адиль): цифры и подписи взяты с
    плашки ТОП-12 в финале подводки (см. тиражирование.html) — на первом кадре
@@ -2406,33 +2397,22 @@ const elEffectsOverview = document.querySelector('#effects-overview .cols');
    шрифтом их из зала не видно. В карточке можно ставить один или несколько
    пунктов; у каждого может быть своя подпись или не быть — «доп. добычи»
    относится только к тоннам, у денег подписи нет. */
-/* 25.09 (Адиль, третья волна): два разных набора эффектов на кадре.
-   · «Исходное положение» (только что зашли на страницу) — два коротких блока
-     охвата: «Топ 12 месторождений» и «Более 90 % добычи».
-   · «Возврат из слоя» (после openProject → closeProject) — расширенный
-     финальный набор: тот же охват + пара цифр эффекта
-     («2 864 тыс. тонн доп. добычи · 326 млрд ₸ — 3–5 % от EBITDA»).
-   Пользователь просил проверить «2,68 млн тонн»: в прежней версии было
-   «2 864 тыс. тонн» (~2,86 млн т). Оставляем полное «2 864 тыс. тонн»,
-   чтобы не разойтись с материалами тиражирования и подводки. */
-const ГЛАВНЫЕ_ЭФФЕКТЫ_ИСХОДНЫЕ = [
-  [ { v:'Топ 12',     l:'месторождений' } ],
-  [ { v:'Более 90 %', l:'добычи' } ],
+/* 30.09 (Адиль): на финальном кадре — два блока по центру, больше ничего.
+   «Топ 12 месторождений / Более 90 % добычи» друг над другом и «2 864 тыс. тонн
+   дополнительной добычи / 326 млрд ₸». Приписка «— 3–5 % от EBITDA» убрана по
+   просьбе; «всех активов» у добычи тоже — в формулировке заказчика его нет.
+   Раньше было два набора (исходный и финальный), исходный ушёл: на первом
+   кадре эффектов быть не должно. «2 864 тыс. тонн» (~2,86 млн т) — полное
+   число, чтобы не разойтись с материалами тиражирования и подводки. */
+const ГЛАВНЫЕ_ЭФФЕКТЫ = [
+  [ { v:'Топ 12',         l:'месторождений' },
+    { v:'Более 90 %',     l:'добычи' } ],
+  [ { v:'2 864 тыс. тонн', l:'дополнительной добычи' },
+    { v:'326 млрд тенге' } ],
 ];
-const ГЛАВНЫЕ_ЭФФЕКТЫ_ФИНАЛЬНЫЕ = [
-  [ { v:'Топ 12',                        l:'месторождений' },
-    { v:'Более 90 %',                    l:'добычи всех активов' } ],
-  /* 25.09 (Адиль, поправка): «3–5 % от EBITDA» — тоже крупным шрифтом,
-     через дефис после суммы. Собираем всё во второй строке в одно
-     крупное значение без мелкой подписи `l` — единая цельная фраза. */
-  [ { v:'2 864 тыс. тонн',               l:'дополнительной добычи' },
-    { v:'326 млрд ₸ — 3–5 % от EBITDA' } ],
-];
-let эффектыФиналВид = false;   /* переключается на true после первого возврата из слоя */
 function рендерЭффекты(){
-  const набор = эффектыФиналВид ? ГЛАВНЫЕ_ЭФФЕКТЫ_ФИНАЛЬНЫЕ : ГЛАВНЫЕ_ЭФФЕКТЫ_ИСХОДНЫЕ;
   elEffectsOverview.textContent = '';
-  for(const пункты of набор){
+  for(const пункты of ГЛАВНЫЕ_ЭФФЕКТЫ){
     const col = document.createElement('div');
     col.className = 'effect-col';
     col.style.setProperty('--ec', 'var(--cyan)');
@@ -2573,12 +2553,7 @@ function refresh(){
   const isFirstMove = replacesStack && !panel.classList.contains('вместо-стека');
   $('stack').classList.remove('скрыт');
   $('stack').classList.toggle('выбран', replacesStack);
-  /* 28.09 (Адиль, поправка): у-стека возвращён — блок эффектов сжимается
-     в один столбец над стеком, а не занимает широкую полосу. Стек теперь
-     стоит на месте (top:50%, translateY(-50%)) — не прыгает наверх; между
-     ним и эффектами достаточно места, чтобы не пересекаться, и эффекты
-     сложены компактно, как раньше. */
-  $('effects-overview').classList.toggle('у-стека', replacesStack);
+  requestAnimationFrame(обновитьЛоготип);
   if(isFirstMove) panel.classList.remove('vis');
   panel.classList.toggle('вместо-стека', replacesStack);
   // Фиксируем начальную точку слева до .vis, чтобы панель именно встала вверх,
@@ -2616,26 +2591,7 @@ function refresh(){
   updateNavLine();
   // список меняет высоту и заново центрируется — уточняем позицию, когда раскладка устоялась
   requestAnimationFrame(updateNavLine);
-  requestAnimationFrame(positionEffectsOverview);
   fitBetweenPanels();
-}
-
-function positionEffectsOverview(){
-  const effects = $('effects-overview');
-  if(!effects.classList.contains('у-стека')){
-    effects.style.left = '';
-    effects.style.top = '';
-    effects.style.width = '';
-    return;
-  }
-  const stackRect = elStack.getBoundingClientRect();
-  effects.style.left = stackRect.left + 'px';
-  effects.style.width = Math.max(stackRect.width, Math.min(560, innerWidth * .3 - 52)) + 'px';
-  /* 28.09 (Адиль): «блок с ключевыми эффектами должен быть выше чем левая
-     панель, а то она слишком близко». Минимум top — 66 px (h1 занимает
-     ~60 px, оставляем узкий зазор), эффекты садятся сразу под шапкой,
-     дальше от стека — глазу проще прочитать их отдельно. */
-  effects.style.top = Math.max(66, stackRect.top - effects.offsetHeight - 20) + 'px';
 }
 
 /* Заливка линии и бегущая точка доходят до текущего узла: видно, что процесс
@@ -2802,39 +2758,8 @@ function обновитьАкцентыНаземки(k, t){
   elNaz.style.top  = ((-_вект.y * 0.5 + 0.5) * innerHeight) + 'px';
 }
 
-const elDrill = document.getElementById('drill');
-const elПроходка = elDrill.querySelector('.m');
 const elГориз = document.getElementById('horiz');
 const _вект = new THREE.Vector3();
-
-/* Проходка. Растёт только пока слой раскрыт: за спиной у докладчика счётчик
-   иначе убежал бы в тысячи метров, и вернувшись на слой он увидел бы чушь.
-   Скорость взята показной, а не промысловой: при честных 20–30 м/ч цифра на
-   глаз стоит на месте, и «бурение идёт» перестаёт читаться. */
-let проходка = 1184.0, тикБурения = 0;
-
-// подпись бурящейся скважины ходит за её забоем
-function обновитьБурение(){
-  const б = zones.skv && zones.skv.бурение;
-  // по mixH, а не по mix: подпись обязана выходить вместе с самим долотом,
-  // то есть уже на наведении, а не только после нажатия
-  // при открытом контенте стопка — миниатюра в углу, подпись к ней великовата и вылезала за край
-  const видно = б && !state.openId && ((zones.skv.mixH || 0) > 0.35);
-  elDrill.classList.toggle('on', !!видно);
-  if(!видно){ тикБурения = 0; return; }
-
-  const сейчас = performance.now();
-  // шаг ограничиваем: вкладка была в фоне — не засчитываем весь простой
-  if(тикБурения) проходка += Math.min(0.25, (сейчас - тикБурения)/1000) * 0.05;
-  тикБурения = сейчас;
-  elПроходка.textContent = проходка.toFixed(1).replace('.', ',') + ' м';
-
-  б.якорь.getWorldPosition(_вект);
-  _вект.project(camera);
-  if(_вект.z > 1){ elDrill.classList.remove('on'); return; }
-  elDrill.style.left = ((_вект.x * 0.5 + 0.5) * innerWidth) + 'px';
-  elDrill.style.top  = ((-_вект.y * 0.5 + 0.5) * innerHeight) + 'px';
-}
 
 // подпись горизонтального ствола — у носка лежачей части
 function обновитьГоризонт(){
@@ -3025,6 +2950,31 @@ function animate(){
     }
   }
 
+  // При выборе крайнего слоя соседние плиты раздвигаются только в одну сторону.
+  // Центрируем всю стопку, включая выступающие подслои пласта, а не выбранную
+  // плиту: иначе верх или низ оказываются за пределами окна.
+  let радиусДляСтопки = null;
+  if(state.locked && !state.openId && !state.launching && !state.closing && pickMeshes.length){
+    const разлёт = subSpread('plast');
+    let верх = -Infinity, низ = Infinity;
+    for(const id of RANK_UP){
+      const z = zones[id];
+      const вверх = id === 'plast' ? разлёт.up : 0;
+      const вниз = id === 'plast' ? разлёт.down : 0;
+      верх = Math.max(верх, z.yt + offsets[id] + вверх);
+      низ = Math.min(низ, z.yb + offsets[id] - вниз);
+    }
+    const сдвиг = controls.target.y - world.position.y - (верх + низ)/2;
+    for(const id of RANK_UP) offsets[id] += сдвиг;
+
+    // Наклон камеры добавляет к высоте стопки видимую глубину плит. Оставляем
+    // запас сверху для заголовка и снизу для навигации по страницам.
+    const расстояние = camera.position.distanceTo(controls.target);
+    const наклон = Math.abs(camera.position.y - controls.target.y) / Math.max(расстояние, 1);
+    const полВысоты = (верх - низ)/2 + наклон*(FOOT + 190)/2 + 12;
+    радиусДляСтопки = полВысоты / (Math.tan(THREE.MathUtils.degToRad(camera.fov/2)) * 0.88);
+  }
+
   const pulse = 0.72 + 0.28*Math.sin(t*3.1);
   // мс с момента второго клика — общий таймер на раздвижку соседей и вспышку выбранного
   const launchElapsed = state.launching ? performance.now() - state.launchAt : 0;
@@ -3168,21 +3118,18 @@ function animate(){
       wm.opacity = mh * 0.85;
       wm.emissiveIntensity = mh * (2.2 + 0.8*Math.sin(t*3.4));
     }
-    /* Долота на забоях: крутятся и поднимают шлам, пока слой скважины раскрыт.
-       Их два — вертикальное в центре и второе на конце горизонтали. Второе
-       живёт по тем же правилам, только развёрнуто по ходу ствола, и шлам у
-       него уходит назад к устью, а не вверх. */
-    if(z.бурение || z.бурениеГ){
+    /* Долото на конце горизонтали крутится и поднимает шлам, пока слой скважины
+       раскрыт. Развёрнуто по ходу ствола, шлам уходит назад к устью. Вертикальное
+       долото в центре снято (30.09) — см. построение скважин. */
+    if(z.бурениеГ){
       if(z.бурМаты) for(const мат of z.бурМаты) мат.opacity = mh * 0.7;   // обсадка без фиолета
-      for(const б of [z.бурение, z.бурениеГ]){
-        if(!б) continue;
-        for(const мат of б.маты) мат.opacity = mh;
-        б.вращ.rotation.y = t * 2.6;
-        const P = б.пыль, attr = P.гео.attributes.position;
-        for(let i=0;i<P.n;i++) attr.setY(i, (P.seed[i] + t*7) % P.H);
-        attr.needsUpdate = true;
-        P.мат.opacity = mh * 0.6;
-      }
+      const б = z.бурениеГ;
+      for(const мат of б.маты) мат.opacity = mh;
+      б.вращ.rotation.y = t * 2.6;
+      const P = б.пыль, attr = P.гео.attributes.position;
+      for(let i=0;i<P.n;i++) attr.setY(i, (P.seed[i] + t*7) % P.H);
+      attr.needsUpdate = true;
+      P.мат.opacity = mh * 0.6;
     }
     // подслои пласта: свой цвет, лёгкое разделение, клипы следуют за слоем и масштабом
     if(z.subs3d){
@@ -3354,7 +3301,21 @@ function animate(){
       controls.target.z + горизР*Math.cos(state.camAz)
     );
     camera.lookAt(controls.target);
-  } else controls.update();
+  } else {
+    // На крутом ракурсе для полного кадра может понадобиться дистанция больше
+    // обычного предела OrbitControls; возвращаем предел после отъезда камеры.
+    if(радиусДляСтопки !== null) controls.maxDistance = Math.max(760, радиусДляСтопки * 1.05);
+    else if(camera.position.distanceTo(controls.target) < 759) controls.maxDistance = 760;
+    controls.update();
+    const расстояние = camera.position.distanceTo(controls.target);
+    if(радиусДляСтопки !== null && радиусДоВыбора === null) радиусДоВыбора = расстояние;
+    if(радиусДоВыбора !== null){
+      const цель = радиусДляСтопки === null ? радиусДоВыбора : Math.max(радиусДоВыбора, радиусДляСтопки);
+      const новыйРадиус = расстояние + (цель - расстояние)*k;
+      camera.position.sub(controls.target).setLength(новыйРадиус).add(controls.target);
+      if(радиусДляСтопки === null && Math.abs(цель - новыйРадиус) < 0.5) радиусДоВыбора = null;
+    }
+  }
   // сдвиг окна проекции под коридор между панелями — тем же плавным ходом,
   // что и остальное (см. комментарий у fitBetweenPanels): раньше прыгал
   // разом в кадре, где openProject уже поставил классу .vis, и модель
@@ -3370,9 +3331,9 @@ function animate(){
     camera.clearViewOffset();
   }
   camera.updateProjectionMatrix();
+  выровнятьНизМини(transitionProgress);
   renderer.render(scene, camera);
   обновитьМеткиТЭО();
-  обновитьБурение();
   обновитьГоризонт();
   обновитьАкцентыНаземки(k, t);
 }
@@ -3388,14 +3349,16 @@ animate();
 const СПРАВКА = {
   шапка:'Первый актив',
   имя:'м/р «Восточный Молдабек»',
-  под:'Атырауская область · АО «Эмбамунайгаз» · в разработке с 1999 года',
+  /* 30.09 (Адиль): из подзаголовка убрано «в разработке с 1999 года»; из таблицы —
+     обводнённость и строка-сноска «запасы и фонд — на 01.01.2026, НГДУ …»; два
+     фонда (360 добывающих + 61 нагнетательная) сведены в один — 421. */
+  под:'Атырауская область · АО «Эмбамунайгаз»',
   /* 25.09 (Адиль): «36,7 % и 14,8 млн тонн должны подсвечиваться как-то» —
      третье поле строки задаёт CSS-класс (см. #справка .rw.акцент). */
   паспорт:{ шапка:'Справочная информация', строки:[
-      ['Остаточные извл. запасы','14,8 млн тонн','акцент'], ['Извлечено','36,7 %','акцент'], ['Обводнённость','88,8 %'],
-      ['Фонд добывающих','360 скважин действующих'], ['Фонд нагнетательных','61 скважина действующая'],
-      ['Добыча с начала года','310,3 тыс. тонн'] ],
-    сноска:'запасы и фонд — на 01.01.2026, НГДУ «Кайнармунайгаз»' },
+      ['Остаточные извл. запасы','14,8 млн тонн','акцент'], ['Извлечено','36,7 %','акцент'],
+      ['Фонд скважин','421 скважина действующая'],
+      ['Добыча с начала года','310,3 тыс. тонн'] ] },
   /* 23.09 (Адиль): «Выработанность» → «Добыто» — на показе за терминологией
      заказчика; «600 вариантов» вместо «тысяч за минуты» — говорим то число,
      под которым ЦРНС реально считалось на первом активе; строки про КИН и
@@ -3404,7 +3367,6 @@ const СПРАВКА = {
      25.09 (Адиль): «Добыто» → «Извлечено» — так называет заказчик; смысл
      тот же (доля запасов, поднятая на поверхность). */
   сделано:{ шапка:'Что уже сделано', строки:[
-      ['ЦИО','ГГДМ переведена из статичной в постоянно действующую'],
       ['Расчёт сценариев','600 вариантов'],
       ['Выявленный потенциал','дополнительно 161 тыс. тонн добычи'],
       ['Оптимизация бурения','6 наклонно-направленных → 2 горизонтальные'],
@@ -3412,8 +3374,9 @@ const СПРАВКА = {
          одним регистром с остальными строками (те же шрифты, та же структура
          «ключ · значение») — раньше они стояли отдельно как подсвеченные
          эффекты, но рядом с общей таблицей визуально выпадали. Класс «эффект»
-         снят, стили в CSS обнулены. */
-      ['КИН до 30 %','рост коэффициента извлечения нефти'],
+         снят, стили в CSS обнулены.
+         30.09 (Адиль): строка «ЦИО» убрана; КИН — с 14 % до 30 %. */
+      ['КИН','рост коэффициента извлечения нефти с 14 % до 30 %'],
       ['550 → 700','увеличение суток межремонтного периода'] ] },
 };
 let ярусСпр = 0;
@@ -3452,31 +3415,21 @@ let ярусСпр = 0;
     сп.querySelector('.сделано').classList.toggle('on', ярусСпр >= 2);
     if(кн) кн.classList.toggle('on', ярусСпр > 0);
     if(ярусСпр > 0){ state.locked = null; state.hover = null; refresh(); }
+    else fitBetweenPanels();
   }
   /* 25.09 (Адиль): кнопка «Первый актив» вернулась — одно нажатие показывает
      оба яруса паспорт+сделано, повторное убирает. Прежний трёхтактовый
      сценарий (0 → 1 → 2 → 0) с одинарным открытием остаётся под клавишей Esc
      для быстрого сброса. При возврате из слоя справка снова открывается
      сразу двумя ярусами (window.__открытьСправку → показать(2)). */
-  /* 28.09 (Адиль): в финальном кадре кнопка «Первый актив» переключает не
-     карточку В. Молдабека, а блок «ТОП-12 месторождений» — карточка
-     первого актива после первого возврата больше не показывается. */
   if(кн) кн.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
     закрытьЭффекты();
-    if(эффектыФиналВид){
-      const т = document.getElementById('топ12');
-      const открыт = т && т.classList.contains('on');
-      if(открыт){ window.__закрытьТоп12 && window.__закрытьТоп12(); }
-      else { window.__открытьТоп12 && window.__открытьТоп12(); }
-    } else {
-      показать(ярусСпр > 0 ? 0 : 2);
-    }
+    показать(ярусСпр > 0 ? 0 : 2);
   });
   addEventListener('keydown', e => {
     if(e.key === 'Escape'){
       показать(0); закрытьЭффекты();
-      if(window.__закрытьТоп12) window.__закрытьТоп12();
     }
   });
   window.__закрытьСправку = () => показать(0);
@@ -3485,28 +3438,6 @@ let ярусСпр = 0;
      без параметра справка стартует свёрнутой — открывается кнопкой. */
   const н = +(new URLSearchParams(location.search).get('справка') || 0);
   if(н > 0) setTimeout(() => показать(н), 400);
-})();
-
-/* ── карточка «ТОП-12 месторождений» ─────────────────────────────────
-   28.09 (Адиль): показывается в финальном кадре вместо справки о В. Молдабеке
-   (см. finishClosing / кнопка Первый актив). Тот же слот справа, тот же
-   плавный fade. */
-(function карточкаТоп12(){
-  const т = document.getElementById('топ12');
-  const кн = document.getElementById('pilot');
-  if(!т) return;
-  window.__открытьТоп12 = () => {
-    т.classList.add('on');
-    if(кн){
-      кн.classList.add('on');
-      const первый = кн.querySelector('span:first-child');
-      if(первый) первый.textContent = 'ТОП-12 месторождений';
-    }
-  };
-  window.__закрытьТоп12 = () => {
-    т.classList.remove('on');
-    if(кн) кн.classList.remove('on');
-  };
 })();
 
 /* ── карточка эффектов ────────────────────────────────────────────────
@@ -3528,6 +3459,7 @@ function закрытьЭффекты(){
   эффектыОткрыты = false;
   const э = document.getElementById('эффекты'), кн = document.getElementById('demo2');
   if(э) э.classList.remove('on'); if(кн) кн.classList.remove('on');
+  fitBetweenPanels();
 }
 (function карточкаЭффектов(){
   const кн = document.getElementById('demo2'), э = document.getElementById('эффекты');
@@ -3659,7 +3591,12 @@ function fitBetweenPanels(){
      модель садилась в кадре правее, чем нужно, подходя вплотную к панели.
      Положительный x у setViewOffset сдвигает картинку влево. */
   const ВЛЕВО = 34;
-  state.viewShiftTargetX = -shift + ВЛЕВО;
+  // На первом экране справа ещё нет карточки «Первый актив»: занимаем часть
+  // пустого места моделью. Когда карточка появится, вернём прежний коридор.
+  const начальныйЭкран = !вФинале() && !$('справка').classList.contains('on')
+    && !$('эффекты').classList.contains('on');
+  const вправоНаСтарте = начальныйЭкран ? Math.min(W * 0.11, 240) : 0;
+  state.viewShiftTargetX = -shift + ВЛЕВО - вправоНаСтарте;
 }
 
 /* Плотность пикселей нельзя выставлять один раз при загрузке: слайд стартует и
@@ -3675,7 +3612,6 @@ function подогнатьПлотность(){
 addEventListener('resize', () => {
   подогнатьПлотность();
   renderer.setSize(innerWidth, innerHeight);
-  positionEffectsOverview();
   fitBetweenPanels();
   updateNavLine();
 });
@@ -3684,149 +3620,55 @@ window.__dbg = { renderer, scene, camera, state, zones, refresh, world,
   get pickCount(){ return pickMeshes.length; },
   get спит(){ return !живой; },
   get точекТЭО(){ return меткиТЭО.length; }, обновитьПодписи: обновитьМеткиТЭО,
-  обновитьБурение, обновитьГоризонт, get проходка(){ return проходка; },
+  обновитьГоризонт,
   get подписьВидна(){ return elTeo.classList.contains('on'); } };
 
-/* ── флоу презентации по клавише «вперёд» (v5) ───────────────────────
-   28.09 (Адиль): v5 ведёт слайд по фиксированному сценарию — на каждую
-   клавишу «пробел / → / Enter / PageDown» отрабатывает следующий такт:
-     1) раскрыть в списке слева «ЦД пласта»;
-     2) раскрыть «ЦД скважины»;
-     3) раскрыть «ЦД инфраструктуры»;
-     4) кнопка «Первый актив» — карточка о В. Молдабеке;
-     5) второй слой снизу — Стратегия разработки (пласт, шаг 1);
-     6) третий слой снизу — ТЭО (пласт, шаг 2);
-     7–8) второй и третий кадры ТЭО;
-     9) четвёртый слой снизу — ЦД скважины;
-    10) верхний слой — ЦД наземной инфраструктуры;
-    11) кнопка ↩ у мини-тортика — свернуть слой.
-   При `?в_рамке=1` (внешний слайдер уже прокидывает такты) не
-   активируем, чтобы не удвоить нажатия. Кнопки-раскрывашки списка
-   вызываем через .click() — иначе повторяли бы содержимое их
-   обработчиков; шаги 5–8 идут прямыми вызовами launchProject /
-   openProject / switchProject: клик по шагу списка только подсвечивает
-   плиту (см. buildStack: openProject запускается кликом по 3D-плите),
-   а мыши у нас нет. */
+/* ── сценарий показа (v5) ─────────────────────────────────────────────
+   30.09 (Адиль): один шаг сценария = одна страница = одна кнопка внизу.
+   Одиннадцать страниц:
+      1  самый первый экран (пирог и список слева, больше ничего);
+      2  в списке раскрыт «ЦД пласта»;   3  раскрыт «ЦД скважины»;
+      4  раскрыт «ЦД добычи и наземной инфраструктуры»;
+      5  карточка «Первый актив»;
+      6  второй слой снизу — Стратегия разработки;
+      7  третий слой — ТЭО, скриншот 1 (нюмекс5);  8  то же, скриншот 2 (нюмекс6);
+      9  четвёртый слой — ЦД скважины;  10  верхний слой — наземная инфраструктура;
+     11  финал: два ключевых эффекта по центру, без пирога и панелей.
+   Клавиши «пробел / → / Enter / PageDown» ведут на следующую страницу,
+   «← / PageUp / Backspace» — на предыдущую, кнопки внизу — на любую.
+   Отклонено: отдельные массивы «шаг вперёд» и «шаг назад», как было раньше
+   (до этого у шагов и страниц были разные нумерации, и кнопки внизу не
+   доходили до раскрытия списка и карточки «Первый актив»): теперь это один
+   механизм, а «вперёд/назад» — переход на соседнюю страницу. Страница
+   определяется по реальному состоянию экрана, а не по счётчику: ручной клик
+   по слою или ↩ у мини-пирога не сбивает нумерацию.
+   При `?в_рамке=1` (внешний слайдер сам прокидывает клавиши) не включается. */
 if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
   const пауза = мс => new Promise(res => setTimeout(res, мс));
-  /* Каждый такт возвращает Promise: следующий шаг ждёт, пока текущий
-     доиграет анимацию (перелёт стопки в угол — ~750 мс, смена контента
-     при switchProject — ещё ~260 мс сверху). Иначе быстрый двойной
-     пробел ловил launchProject посреди state.launching / state.closing
-     и второй такт молча уходил в return. */
-  const шаги = [
-    async () => document.getElementById('lay-plast').click(),
-    async () => document.getElementById('lay-skv').click(),
-    async () => document.getElementById('lay-naz').click(),
-    async () => document.getElementById('pilot').click(),
-    async () => {
-      if(window.__закрытьСправку) window.__закрытьСправку();
-      if(window.__закрытьТоп12) window.__закрытьТоп12();
-      закрытьЭффекты();
-      panelState.zone = 'plast'; panelState.sub = 1;
-      launchProject('plast');
-      await пауза(MINI_TRANSITION_MS + 60);
-    },
-    async () => {
-      panelState.zone = 'plast'; panelState.sub = 2;
-      openProject('plast');   // isSwitch внутри — гасит контент и через 260 мс подставляет ТЭО
-      await пауза(400);
-    },
-    async () => { showTeoImage(1); await пауза(720); },
-    async () => { showTeoImage(2); await пауза(720); },
-    async () => { switchProject('skv'); await пауза(MINI_TRANSITION_MS + 60); },
-    async () => { switchProject('naz'); await пауза(MINI_TRANSITION_MS + 60); },
-    async () => { closeProject(); },
-  ];
-  /* 29.09 (Адиль): «добавь кнопку назад, чтобы можно было идти назад».
-     Клавиша ← / PageUp / Backspace откатывает один такт. Для каждого шага
-     вперёд есть зеркальный откат — обратно[i] возвращает экран в состояние,
-     каким он был ПОСЛЕ шага i-1. Отклонено: перепроигрывать сценарий с нуля
-     до нужного такта — анимации перелёта стопки идут по секунде, откат на
-     один такт превратился бы в десяток секунд ожидания. */
-  const сброситьФинал = () => {
-    if(!эффектыФиналВид) return;
-    эффектыФиналВид = false;
-    document.body.classList.remove('финал');
-    рендерЭффекты();
-    if(window.__закрытьТоп12) window.__закрытьТоп12();
-    const подпись = document.querySelector('#pilot span:first-child');
-    if(подпись) подпись.textContent = 'Первый актив';   // __открытьТоп12 переименовывает кнопку
-  };
-  const обратно = [
-    /* 0 */ async () => document.getElementById('lay-plast').click(),   // повторный клик по раскрытому контуру сворачивает его
-    /* 1 */ async () => document.getElementById('lay-plast').click(),   // выбранный «скважины» → снова «пласта»
-    /* 2 */ async () => document.getElementById('lay-skv').click(),
-    /* 3 */ async () => {
-      if(window.__закрытьСправку) window.__закрытьСправку();
-      document.getElementById('lay-naz').click();   // справка сбросила выбор — возвращаем раскрытую «инфраструктуру»
-    },
-    /* 4 */ async () => {
-      возвратБезФинала = 'справка';   // finishClosing вернёт справку «Первый актив», а не финал с ТОП-12
-      closeProject();
-      await пауза(ЗАКРЫТИЕ_МС + 150);
-    },
-    /* 5 */ async () => {
-      panelState.zone = 'plast'; panelState.sub = 1;
-      openProject('plast');   // из ТЭО обратно в «Стратегию»
-      await пауза(400);
-    },
-    /* 6 */ async () => { showTeoImage(0); await пауза(720); },
-    /* 7 */ async () => { showTeoImage(1); await пауза(720); },
-    /* 8 */ async () => {
-      panelState.zone = 'plast'; panelState.sub = 2;
-      switchProject('plast');
-      await пауза(500);   // контент ТЭО подставляется через 260 мс и открывается с первого кадра
-      showTeoImage(2);
-      await пауза(720);
-    },
-    /* 9 */ async () => { switchProject('skv'); await пауза(MINI_TRANSITION_MS + 60); },
-    /* 10 */ async () => {
-      сброситьФинал();   // из финала обратно в открытый слой: расширенные эффекты и ТОП-12 гасим
-      launchProject('naz');
-      await пауза(MINI_TRANSITION_MS + 60);
-    },
-  ];
-  let текущий = 0, идёт = false;
-  const teoOpen = () => state.openId === 'plast' && panelState.sub === 2;
-  const syncTeoStep = () => { if(teoOpen()) текущий = 6 + teoImageIndex; };
-  async function вперёд(){
-    if(идёт || текущий >= шаги.length) return;
-    идёт = true;
-    try { await шаги[текущий++](); }
-    catch(err){ console.error('v5 шаг', текущий, err); }
-    finally { идёт = false; обновитьНавигацию(); }
-  }
-  async function назадШаг(){
-    if(идёт || текущий <= 0) return;
-    идёт = true;
-    try { await обратно[--текущий](); }
-    catch(err){ console.error('v5 откат', текущий, err); }
-    finally { идёт = false; обновитьНавигацию(); }
-  }
-  /* 29.09 (Адиль): внизу кнопки 1–8 — прямой переход на страницу показа.
-     `такт` — сколько шагов сценария считается пройденным на этой странице:
-     после перехода клавиши «вперёд/назад» продолжают ровно с этого места.
-     Прямой переход, а не прокрутка шагами: с 8-й на 2-ю пришлось бы
-     проиграть шесть откатов подряд, ~15 секунд анимаций. */
   const СТРАНИЦЫ = [
-    { имя:'Начало',                              такт:0 },
-    { имя:'Стратегия разработки',                такт:5,  слой:'plast', sub:1 },
-    { имя:'Технико-экономическая оценка · кадр 1', такт:6,  слой:'plast', sub:2, кадр:0 },
-    { имя:'Технико-экономическая оценка · кадр 2', такт:7,  слой:'plast', sub:2, кадр:1 },
-    { имя:'Технико-экономическая оценка · кадр 3', такт:8,  слой:'plast', sub:2, кадр:2 },
-    { имя:'ЦД скважины',                         такт:9,  слой:'skv' },
-    { имя:'ЦД добычи и наземной инфраструктуры', такт:10, слой:'naz' },
-    { имя:'Итог',                                такт:11 },
+    { имя:'Начало' },
+    { имя:'Список: ЦД пласта',                     список:'plast' },
+    { имя:'Список: ЦД скважины',                   список:'skv' },
+    { имя:'Список: ЦД добычи и наземной инфраструктуры', список:'naz' },
+    { имя:'Первый актив',                          справка:true },
+    { имя:'Стратегия разработки',                  слой:'plast', sub:1 },
+    { имя:'Технико-экономическая оценка · кадр 1', слой:'plast', sub:2, кадр:0 },
+    { имя:'Технико-экономическая оценка · кадр 2', слой:'plast', sub:2, кадр:1 },
+    { имя:'ЦД скважины',                           слой:'skv' },
+    { имя:'ЦД добычи и наземной инфраструктуры',   слой:'naz' },
+    { имя:'Итог',                                  финал:true },
   ];
-  // Страница считается по реальному состоянию экрана, а не по счётчику тактов:
-  // ручной клик по слою или ↩ у мини-пирога тоже должен подсвечивать верную кнопку.
+  const teoOpen = () => state.openId === 'plast' && panelState.sub === 2;
   const страницаСейчас = () => {
-    if(state.openId === 'plast') return panelState.sub === 2 ? 3 + teoImageIndex : 2;
-    if(state.openId === 'skv') return 6;
-    if(state.openId === 'naz') return 7;
-    return эффектыФиналВид ? 8 : 1;
+    if(state.openId === 'plast') return teoOpen() ? 7 + teoImageIndex : 6;
+    if(state.openId === 'skv') return 9;
+    if(state.openId === 'naz') return 10;
+    if(вФинале()) return 11;
+    if($('справка').classList.contains('on')) return 5;
+    if(state.locked) return { plast:2, skv:3, naz:4 }[state.locked] || 1;
+    return 1;
   };
+  let идёт = false;
   const навигация = document.createElement('nav');
   навигация.id = 'страницы';
   навигация.setAttribute('aria-label', 'Страницы показа');
@@ -3838,57 +3680,83 @@ if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
       if(i + 1 === н) к.setAttribute('aria-current', 'page'); else к.removeAttribute('aria-current');
     });
   }
+  // Закрывает раскрытый слой и ждёт, пока стопка вернётся: иначе следующий
+  // launchProject упирается в state.closing и молча уходит в return.
+  async function закрытьСлой(куда){
+    if(!state.openId) return;
+    возвратКуда = куда;
+    closeProject();
+    await пауза(ЗАКРЫТИЕ_МС + 150);
+  }
+  // страницы 1–5: пирог на месте, слой не раскрыт
+  async function показатьКадр(ц){
+    document.body.classList.remove('финал');
+    закрытьЭффекты();
+    if(ц.справка){
+      await закрытьСлой('справка');   // finishClosing сам вернёт карточку
+      if(!$('справка').classList.contains('on') && window.__открытьСправку) window.__открытьСправку();
+      return;
+    }
+    await закрытьСлой(null);
+    if(window.__закрытьСправку) window.__закрытьСправку();
+    panelState.zone = ц.список || null; panelState.sub = null;
+    state.locked = ц.список || null; state.hover = null; state.hoverSub = null;
+    refresh();
+  }
+  // страницы 6–10: раскрыт слой (и для ТЭО — нужный скриншот)
+  async function открытьСлой(ц){
+    document.body.classList.remove('финал');
+    закрытьЭффекты();
+    let перезагрузили = true;
+    if(state.openId === null){
+      if(window.__закрытьСправку) window.__закрытьСправку();
+      if(ц.слой === 'plast'){ panelState.zone = 'plast'; panelState.sub = ц.sub; }
+      launchProject(ц.слой);
+      await пауза(MINI_TRANSITION_MS + 60);
+    } else if(state.openId !== ц.слой){
+      if(ц.слой === 'plast'){ panelState.zone = 'plast'; panelState.sub = ц.sub; }
+      switchProject(ц.слой);
+      await пауза(MINI_TRANSITION_MS + 60);
+    } else if(ц.слой === 'plast' && panelState.sub !== ц.sub){
+      panelState.sub = ц.sub;
+      openProject('plast');
+      await пауза(400);
+    } else перезагрузили = false;
+    if(ц.слой === 'plast' && ц.sub === 2){
+      if(перезагрузили) await пауза(300);   // контент ТЭО подставляется с задержкой и открывается с первого скриншота
+      showTeoImage(ц.кадр);
+      await пауза(720);
+    }
+  }
+  // страница 11: пирог и панели гаснут, по центру остаются два блока эффектов
+  async function показатьФинал(){
+    закрытьЭффекты();
+    if(window.__закрытьСправку) window.__закрытьСправку();
+    document.body.classList.add('финал');   // пирог гаснет сразу, пока слой уезжает; блоки эффектов выходят с задержкой (см. CSS)
+    if(state.openId){
+      возвратКуда = null;
+      closeProject();
+      await пауза(ЗАКРЫТИЕ_МС + 150);
+    } else {
+      panelState.zone = null; panelState.sub = null;
+      state.locked = null; state.hover = null; state.hoverSub = null;
+      refresh();
+      await пауза(800);
+    }
+  }
   async function перейтиНа(n){
-    if(идёт) return;
+    if(идёт || n < 1 || n > СТРАНИЦЫ.length) return;
     идёт = true;
     try {
       const ц = СТРАНИЦЫ[n - 1];
-      if(n === 1 || n === 8){
-        if(state.openId){
-          возвратБезФинала = (n === 1) ? 'начало' : null;   // на «Итог» закрытие само даёт финал
-          closeProject();
-          await пауза(ЗАКРЫТИЕ_МС + 150);
-        }
-        if(n === 1){
-          сброситьФинал();
-          if(window.__закрытьСправку) window.__закрытьСправку();
-          закрытьЭффекты();
-          state.locked = null; state.hover = null;
-          panelState.zone = null; panelState.sub = null;
-          refresh();
-        } else if(!эффектыФиналВид){   // пришли с начального экрана: слой не закрывался, финал ставим сами
-          закрытьЭффекты();
-          state.locked = null; state.hover = null;
-          refresh();
-          применитьФинал();
-        }
-      } else {
-        if(state.openId === null){
-          сброситьФинал();
-          if(window.__закрытьСправку) window.__закрытьСправку();
-          закрытьЭффекты();
-          if(ц.слой === 'plast'){ panelState.zone = 'plast'; panelState.sub = ц.sub; }
-          launchProject(ц.слой);
-          await пауза(MINI_TRANSITION_MS + 60);
-        } else if(state.openId !== ц.слой){
-          if(ц.слой === 'plast'){ panelState.zone = 'plast'; panelState.sub = ц.sub; }
-          switchProject(ц.слой);
-          await пауза(MINI_TRANSITION_MS + 60);
-        } else if(ц.слой === 'plast' && panelState.sub !== ц.sub){
-          panelState.sub = ц.sub;
-          openProject('plast');
-          await пауза(400);
-        }
-        if(ц.слой === 'plast' && ц.sub === 2){
-          await пауза(300);   // контент ТЭО подставляется с задержкой и открывается с первого кадра
-          showTeoImage(ц.кадр);
-          await пауза(720);
-        }
-      }
-      текущий = ц.такт;
+      if(ц.слой) await открытьСлой(ц);
+      else if(ц.финал) await показатьФинал();
+      else await показатьКадр(ц);
     } catch(err){ console.error('v5 страница', n, err); }
     finally { идёт = false; обновитьНавигацию(); }
   }
+  const вперёд = () => перейтиНа(страницаСейчас() + 1);
+  const назад = () => перейтиНа(страницаСейчас() - 1);
   СТРАНИЦЫ.forEach((ц, i) => {
     const к = document.createElement('button');
     к.type = 'button';
@@ -3902,26 +3770,24 @@ if(new URLSearchParams(location.search).get('в_рамке') !== '1'){
   document.body.appendChild(навигация);
   setInterval(обновитьНавигацию, 300);
   обновитьНавигацию();
-  addEventListener('keydown', async e => {
-    const назад = e.code === 'ArrowLeft' || e.code === 'PageUp' || e.code === 'Backspace';
-    if(!назад && e.code !== 'Space' && e.code !== 'ArrowRight' && e.code !== 'Enter' && e.code !== 'NumpadEnter' && e.code !== 'PageDown') return;
+  addEventListener('keydown', e => {
+    const влево = e.code === 'ArrowLeft' || e.code === 'PageUp' || e.code === 'Backspace';
+    if(!влево && e.code !== 'Space' && e.code !== 'ArrowRight' && e.code !== 'Enter' && e.code !== 'NumpadEnter' && e.code !== 'PageDown') return;
     const т = e.target;
     if(т && (т.tagName === 'INPUT' || т.tagName === 'TEXTAREA' || т.isContentEditable)) return;
     e.preventDefault();
     if(идёт || e.repeat) return;
-    syncTeoStep();
-    if(назад){ await назадШаг(); return; }
-    await вперёд();
+    if(влево) назад(); else вперёд();
   });
   $('pc-carousel-prev').addEventListener('click', e => {
     e.stopPropagation();
     if(идёт || !teoOpen() || teoImageIndex === 0) return;
-    showTeoImage(teoImageIndex - 1); syncTeoStep();
+    showTeoImage(teoImageIndex - 1);
   });
   $('pc-carousel-next').addEventListener('click', e => {
     e.stopPropagation();
-    if(!teoOpen()) return;
-    syncTeoStep(); вперёд();
+    if(!teoOpen() || идёт) return;
+    вперёд();
   });
 } else {
   $('pc-carousel-prev').addEventListener('click', e => {
