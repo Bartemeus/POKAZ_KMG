@@ -409,7 +409,7 @@
 <!-- ═══ Content of an open layer (right, 70 % of the screen) ═════════════
      One view per layer; the reservoir has one per step (GGDM, step 0, has
      no external tool and never opens). JS marks the current view and either
-     opens its video by default and embeds the local application on request.
+     opens its configured default tab and embeds the local application on request.
      The reservoir strategy uses NUMEX, the well layer uses DrillSpot.
      24.09 (Adil): titles use the customer's words, not file names; the
      "← к цифровому двойнику" button and the amber kicker were removed —
@@ -492,17 +492,17 @@
     <video id="content-tumar" src="tumar_new.mp4?v=faststart-1" controls muted loop playsinline preload="auto"
       aria-label="TUMAR"></video>
   </section>
-  <section class="content-view content-view-app content-view-surface" data-zone="surface">
+  <section class="content-view content-view-app content-view-surface" data-zone="surface" data-default-view="live">
     <div class="content-kicker">ЦД наземки · проект 03</div>
     <div class="content-heading">
       <div class="content-name">Интеллектуальное месторождение</div>
       <div class="content-tabs" role="tablist" aria-label="Интеллектуальное месторождение">
-        <button type="button" role="tab" data-view="video" aria-selected="true" aria-controls="content-im-video">Видео</button>
-        <button type="button" role="tab" data-view="live" aria-selected="false" aria-controls="content-production-monitoring">Живая система</button>
+        <button type="button" role="tab" data-view="video" aria-selected="false" aria-controls="content-im-video">Видео</button>
+        <button type="button" role="tab" data-view="live" aria-selected="true" aria-controls="content-production-monitoring">Живая система</button>
       </div>
     </div>
     <video class="content-media" id="content-im-video" src="im.mp4?v=faststart-1" controls muted loop playsinline preload="auto" aria-label="Интеллектуальное месторождение — видео"></video>
-    <iframe class="content-live" id="content-production-monitoring" data-src="production-monitoring/index.html?focus=wells&amp;v=20260929.2" title="Интеллектуальное месторождение — фонд скважин" allow="fullscreen"></iframe>
+    <iframe class="content-live" id="content-production-monitoring" data-src="production-monitoring/index.html?focus=wells&amp;v=20260930.2" title="Интеллектуальное месторождение — график добычи и фонд скважин" allow="fullscreen"></iframe>
   </section>
   <video id="content-video" controls autoplay muted loop playsinline preload="metadata"></video>
   <div id="content-badge">заготовка · наполнение позже</div>

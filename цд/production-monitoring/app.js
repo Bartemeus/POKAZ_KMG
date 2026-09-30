@@ -9,14 +9,22 @@
     function updateZoom() {
         if (focusWells) {
             var table = document.getElementById('normativeTable');
-            if (!table) return;
+            var chart = document.querySelector('.widget[widget-id="a1"]');
+            if (!table || !chart) return;
             var viewWidth = window.innerWidth;
             var viewHeight = window.innerHeight;
-            var scale = Math.min(viewWidth / table.offsetWidth, viewHeight / table.offsetHeight);
-            var left = (viewWidth - table.offsetWidth * scale) / 2 - table.offsetLeft * scale;
-            var top = (viewHeight - table.offsetHeight * scale) / 2 - table.offsetTop * scale;
+            var frameLeft = Math.min(chart.offsetLeft, table.offsetLeft);
+            var frameTop = Math.min(chart.offsetTop, table.offsetTop);
+            var frameRight = Math.max(chart.offsetLeft + chart.offsetWidth, table.offsetLeft + table.offsetWidth);
+            var frameBottom = Math.max(chart.offsetTop + chart.offsetHeight, table.offsetTop + table.offsetHeight);
+            var frameWidth = frameRight - frameLeft;
+            var frameHeight = frameBottom - frameTop;
+            var scaleX = viewWidth / frameWidth;
+            var scaleY = viewHeight / frameHeight;
+            var left = -frameLeft * scaleX;
+            var top = -frameTop * scaleY;
             $('.dashboard').css({
-                transform: 'translate(' + left + 'px, ' + top + 'px) scale(' + scale + ')',
+                transform: 'translate(' + left + 'px, ' + top + 'px) scale(' + scaleX + ', ' + scaleY + ')',
                 'transform-origin': 'top left',
                 width: '7680px',
                 height: '2160px'

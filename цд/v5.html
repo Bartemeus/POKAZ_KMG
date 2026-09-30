@@ -436,6 +436,9 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
 #project-content:is(.с-видео,.с-системой,.с-карусель) :is(#pc-claim,#pc-badge,#pc-back,#pc-kick){display:none}
 #project-content.с-видео #pc-video{display:block}
 #project-content.с-системой #pc-system{display:block}
+#project-content.с-системой{padding:96px 0 0;gap:0;justify-content:flex-start;overflow:hidden}
+#project-content.с-системой #pc-name{padding:0 32px 18px;flex-shrink:0;max-width:none}
+#project-content.с-системой #pc-system{height:0;min-height:0;max-height:none;aspect-ratio:auto;flex:1 1 0}
 #project-content.с-карусель #pc-carousel{display:block}
 /* Кнопка возврата к первому кадру. Стоит у 3D-модели в нижнем левом углу:
    миниатюра занимает `--mini-width × --мини-высота` от MINI_MARGIN, кнопка
@@ -531,7 +534,7 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
   </div>
   <video id="pc-tumar" src="tumar_new.mp4?v=faststart-1" controls muted loop playsinline preload="auto"
     aria-label="TUMAR"></video>
-  <iframe id="pc-system" title="NUMEX — Технико-экономическая оценка" allow="fullscreen"></iframe>
+  <iframe id="pc-system" title="Интеллектуальное месторождение — график добычи и фонд скважин" allow="fullscreen"></iframe>
   <div id="pc-badge">заготовка · наполнение позже</div>
 </aside>
 <!-- В показе переключение должно быть мгновенным даже без интернета,
@@ -540,7 +543,6 @@ body.финал :is(#stack,#справка,#pilot,#mini-reset,#panel,#chip,#teo,
 <div id="video-preloaders" aria-hidden="true">
   <video src="numex_opt.mp4" preload="auto" muted playsinline></video>
   <video src="drillspot_cut.mp4" preload="auto" muted playsinline></video>
-  <video src="im.mp4" preload="auto" muted playsinline></video>
 </div>
 <button id="mini-reset" type="button" aria-label="Вернуть исходный вид" title="Вернуть исходный вид">↩</button>
 
@@ -1965,7 +1967,7 @@ const RESERVOIR_CONTENT = {
 };
 const ZONE_VIDEOS = {
   skv:{ file:'drillspot_cut.mp4', title:'Цифровой двойник скважины' },
-  naz:{ file:'im.mp4', title:'Интеллектуальное месторождение' }
+  naz:{ page:'production-monitoring/index.html?focus=wells&v=20260930.2', title:'Интеллектуальное месторождение' }
 };
 const teoImages = [...document.querySelectorAll('#pc-carousel img')];
 const teoCarousel = document.getElementById('pc-carousel');
@@ -2081,6 +2083,7 @@ function openProject(id){
     pc.classList.toggle('с-карусель', Boolean(videoData?.images));
     if(videoData?.images) showTeoImage(0);
     if(videoData?.page){
+      система.title = videoData.title;
       if(система.getAttribute('src') !== videoData.page) система.setAttribute('src', videoData.page);
     } else if(система.hasAttribute('src')) система.removeAttribute('src');
     pc.classList.toggle('с-tumar', показыватьTumar);
