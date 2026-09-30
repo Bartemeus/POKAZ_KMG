@@ -10,8 +10,13 @@ const diameterLabel = document.querySelector('#diameter-label');
 const tooltip = document.querySelector('#scene-tooltip');
 const depthLabels = document.querySelector('#depth-labels');
 const compass = document.querySelector('#orientation-gizmo');
-const initialTarget = new THREE.Vector3(...sceneData.camera.target);
-const initialOffset = new THREE.Vector3(...sceneData.camera.offset);
+const presentationView = new URLSearchParams(location.search).get('presentation') === 'v6';
+// Change the magnitude to adjust rotation speed; change the sign to reverse direction.
+const PRESENTATION_ROTATION_SPEED = -1.2;
+// In v6 the well scene starts near the supplied front view, with the well
+// trajectory and the section plane filling most of the Directional widget.
+const initialTarget = new THREE.Vector3(...(presentationView ? [367, -575, 0] : sceneData.camera.target));
+const initialOffset = new THREE.Vector3(...(presentationView ? [1200, 350, 2400] : sceneData.camera.offset));
 const state = { exaggeration: sceneData.exaggeration, grid: true, ellipses: true, bit: true, mode: 'isometric', follow: false, mdStart: 0 };
 let renderer;
 
@@ -45,6 +50,7 @@ function initializeScene() {
   controls.rotateSpeed = .7;
   controls.zoomSpeed = 1;
   controls.panSpeed = .85;
+  controls.autoRotateSpeed = PRESENTATION_ROTATION_SPEED;
   controls.minZoom = .2;
   controls.maxZoom = 12;
   controls.minPolarAngle = .02;
@@ -302,13 +308,14 @@ function initializeScene() {
     controls.target.y *= state.exaggeration / sceneData.exaggeration;
     camera.position.copy(controls.target).add(initialOffset);
     camera.up.set(0, 1, 0);
-    camera.zoom = Math.min(1, sceneData.exaggeration / state.exaggeration);
+    camera.zoom = presentationView ? 1.02 * sceneData.exaggeration / state.exaggeration
+      : Math.min(1, sceneData.exaggeration / state.exaggeration);
     camera.updateProjectionMatrix();
     camera.lookAt(controls.target);
     controls.update();
     controls.enableDamping = true;
     setViewMode('isometric');
-    frameGrid();
+    if (!presentationView) frameGrid();
     scheduleRender();
   }
 
@@ -523,12 +530,18 @@ function initializeScene() {
   document.addEventListener('visibilitychange', scheduleRender);
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(host);
+  const visibilityObserver = presentationView ? new IntersectionObserver(([entry]) => {
+    controls.autoRotate = entry.isIntersecting;
+    if (controls.autoRotate) scheduleRender();
+  }) : null;
+  visibilityObserver?.observe(area);
   window.addEventListener('pagehide', event => {
     if (event.persisted) return;
     destroyed = true;
     cancelAnimationFrame(frame);
     cancelAnimationFrame(restoreFrame);
     resizeObserver.disconnect();
+    visibilityObserver?.disconnect();
     controls.dispose();
     scene.traverse(object => {
       object.geometry?.dispose();

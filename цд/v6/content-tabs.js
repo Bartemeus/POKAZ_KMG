@@ -66,7 +66,7 @@
     }
     if(mode === 'live'){
       video?.pause();
-      if(!frame.hasAttribute('src')) frame.src = frame.dataset.src;
+      if(view._wasVisible && !frame.hasAttribute('src')) frame.src = frame.dataset.src;
     } else if(mode === 'overview'){
       if(restart) showTeoScreen(0);
     } else if(view.classList.contains('is-current') && content.classList.contains('is-visible')){
@@ -80,7 +80,7 @@
       const visible = view.classList.contains('is-current') && content.classList.contains('is-visible');
       if(visible && !view._wasVisible){
         view._wasVisible = true;
-        selectView(view, view.querySelector('.content-carousel') ? 'overview' : 'video', true);
+        selectView(view, view.dataset.defaultView || (view.querySelector('.content-carousel') ? 'overview' : 'video'), true);
       } else if(!visible && view._wasVisible){
         view._wasVisible = false;
         view.querySelector('video.content-media')?.pause();
@@ -89,7 +89,7 @@
   }
 
   for(const view of views){
-    selectView(view, view.querySelector('.content-carousel') ? 'overview' : 'video');
+    selectView(view, view.dataset.defaultView || (view.querySelector('.content-carousel') ? 'overview' : 'video'));
     const tabs = [...view.querySelectorAll('.content-tabs [role="tab"]')];
     for(const tab of tabs){
       tab.addEventListener('click', () => {

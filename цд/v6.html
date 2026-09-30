@@ -478,17 +478,17 @@
       <span id="teo-count" aria-live="polite">1 / 2</span>
     </div>
   </section>
-  <section class="content-view content-view-app" data-zone="well">
+  <section class="content-view content-view-app" data-zone="well" data-default-view="live">
     <div class="content-kicker">ЦД скважины · проект 02</div>
     <div class="content-heading">
       <div class="content-name">Цифровой двойник скважины</div>
       <div class="content-tabs" role="tablist" aria-label="Цифровой двойник скважины">
-        <button type="button" role="tab" data-view="video" aria-selected="true" aria-controls="content-drillspot-video">Видео</button>
-        <button type="button" role="tab" data-view="live" aria-selected="false" aria-controls="content-drillspot">Живая система</button>
+        <button type="button" role="tab" data-view="video" aria-selected="false" aria-controls="content-drillspot-video">Видео</button>
+        <button type="button" role="tab" data-view="live" aria-selected="true" aria-controls="content-drillspot">Живая система</button>
       </div>
     </div>
     <video class="content-media" id="content-drillspot-video" src="drillspot_cut.mp4" controls muted loop playsinline preload="auto" aria-label="Цифровой двойник скважины — видео"></video>
-    <iframe class="content-live" id="content-drillspot" data-src="drillspot/" title="DrillSpot — цифровой двойник скважины" allow="fullscreen"></iframe>
+    <iframe class="content-live" id="content-drillspot" data-src="drillspot/?presentation=v6" title="DrillSpot — цифровой двойник скважины" allow="fullscreen"></iframe>
     <video id="content-tumar" src="tumar_new.mp4?v=faststart-1" controls muted loop playsinline preload="auto"
       aria-label="TUMAR"></video>
   </section>
@@ -518,7 +518,7 @@
 </script>
 <script type="module" src="v4/main.js?v=v6-back-1"></script>
 <script defer src="v6/teo-components.js?v=1"></script>
-<script defer src="v6/content-tabs.js?v=8"></script>
+<script defer src="v6/content-tabs.js?v=9"></script>
 <script type="module" src="v6/presentation-steps.js?v=6"></script>
 </body>
 </html>
