@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Цифровой двойник с применением ИИ · первый слайд</title>
+<!-- First digital-twin frame. Same frame as первый_слайд_v3.html.
+
+     All interface markup and texts live in this file; styles in v4/styles.
+     JavaScript (v4/main.js) does not create interface elements: it only
+     toggles state classes (is-hot, is-visible, is-current …), positions labels
+     over the 3D model and plays the videos.
+
+     Zone ids: reservoir (пласт), well (скважина), surface (наземка).
+     Zone colours come from CSS (--zone-* in styles/base.css) — the 3D scene
+     reads the same variables. -->
+<link rel="stylesheet" href="v4/styles/base.css">
+<link rel="stylesheet" href="v4/styles/stack.css">
+<link rel="stylesheet" href="v4/styles/key-effects.css">
+<link rel="stylesheet" href="v4/styles/panel.css">
+<link rel="stylesheet" href="v4/styles/asset-card.css">
+<link rel="stylesheet" href="v4/styles/labels.css">
+<link rel="stylesheet" href="v4/styles/content.css?v=drillspot-2">
+<link rel="stylesheet" href="v6/overrides.css?v=7">
+</head>
+<body data-version="v6">
+
+<div id="loader">
+  <div class="title">Цифровой двойник с применением ИИ</div>
+  <div class="message"></div>
+</div>
+
+<div id="scene"></div>
+
+<div id="header">
+  <h1>Цифровой двойник с применением <b>ИИ</b></h1>
+</div>
+
+
+<!-- ═══ Zone stack on the left ═══════════════════════════════════════════
+     One button per zone and per step. data-zone / data-step tie a button to
+     the 3D layer; data-short is the name shown next to the cursor over the
+     model. Numbers drop the leading zero of the script numbering (01 → 1);
+     steps are numbered 1.1, 1.2 … because presenters refer to them by voice.
+
+     Steps show only for a selected zone (class is-visible). Reservoir steps go
+     bottom-up in 3D: step 0 is the bottom slab (GGDM), step 2 the top (TEO).
+     The resource-base zone (ГРР) is hidden by the 11.08 decision; its texts
+     are in первый_слайд_v3.html, ZONES.grr. -->
+<div id="stack">
+  <div id="nav-line"><div id="nav-fill"></div><div id="nav-dot"></div></div>
+
+  <button class="stack-item" data-zone="reservoir" data-short="Пласт">
+    <div class="num">1</div><div class="title">Цифровой двойник пласта</div><i class="chevron"></i>
+  </button>
+  <button class="stack-item step" data-zone="reservoir" data-step="0" data-short="ГГДМ">
+    <div class="num">1.1</div><div class="title">Построение и актуализация геолого-гидродинамической модели</div>
+  </button>
+  <button class="stack-item step" data-zone="reservoir" data-step="1" data-short="Стратегия разработки">
+    <div class="num">1.2</div><div class="title">Подготовка стратегии разработки месторождения</div>
+  </button>
+  <button class="stack-item step" data-zone="reservoir" data-step="2" data-short="Технико-экономическая оценка">
+    <div class="num">1.3</div><div class="title">Проведение технико-экономической оценки</div>
+  </button>
+
+  <button class="stack-item" data-zone="well" data-short="Скважина">
+    <div class="num">2</div><div class="title">Цифровой двойник скважины</div><i class="chevron"></i>
+  </button>
+  <button class="stack-item step" data-zone="well" data-step="0" data-short="Мониторинг бурения">
+    <div class="num">2.1</div><div class="title">Мониторинг бурения и сводки</div>
+  </button>
+  <button class="stack-item step" data-zone="well" data-step="1" data-short="ТКРС">
+    <div class="num">2.2</div><div class="title">Планирование и контроль ремонтов скважин</div>
+  </button>
+
+  <button class="stack-item" data-zone="surface" data-short="Наземная инфраструктура">
+    <div class="num">3</div><div class="title">Цифровой двойник добычи и наземной инфраструктуры</div><i class="chevron"></i>
+  </button>
+  <button class="stack-item step" data-zone="surface" data-step="0" data-short="КНС и инфраструктура">
+    <div class="num">3.1</div><div class="title">Насосные станции и наземная инфраструктура</div>
+  </button>
+  <button class="stack-item step" data-zone="surface" data-step="1" data-short="Мониторинг добычи">
+    <div class="num">3.2</div><div class="title">Мониторинг добычи</div>
+  </button>
+</div>
+
+
+<!-- ═══ Key programme effects under the title ════════════════════════════
+     23.09 (Adil): programme-level effects, not per zone — the per-zone
+     −5 %/−3 % live in the zone panel. Figures are from the TOP-12 plate in the
+     lead-in finale (тиражирование.html) and don't depend on the selected zone.
+     24.09 (Adil): "326 млрд ₸" is a second big value, not a caption — money
+     matters as much as tonnes, and small print is unreadable from the hall.
+     25.09 (Adil): "Топ 12" and "Более 90 %" merged into one card — two halves
+     of one idea, the programme's reach. Two ideas, two cards. -->
+<section id="key-effects" aria-label="Ключевые эффекты программы">
+  <div class="columns is-current" data-state="initial">
+    <div class="card">
+      <div class="rows">
+        <div class="row"><span class="value">Топ 12</span><span class="label">месторождений</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rows">
+        <div class="row"><span class="value">Более 90 %</span><span class="label">добычи</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="columns" data-state="final">
+    <div class="card">
+      <div class="rows">
+        <div class="row"><span class="value">Топ 12</span><span class="label">месторождений</span></div>
+        <div class="row"><span class="value">Более 90 %</span><span class="label">добычи всех активов</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rows">
+        <div class="row"><span class="value">2 864 тыс. тонн</span><span class="label">дополнительной добычи</span></div>
+        <div class="row"><span class="value">326 млрд ₸ — 3–5 % от EBITDA</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══ Zone panel on the right ══════════════════════════════════════════
+     One view per zone and per step; JS marks the selected one with is-current.
+
+     Kept short on purpose: title, one line of gist, modules, effect. It used
+     to carry the full wording plus explanations under every item — a wall of
+     text the presenter reads out anyway. The full wording and explanations
+     stay here in comments. -->
+<aside id="panel">
+  <button id="panel-close" aria-label="Закрыть">×</button>
+
+  <!-- ── reservoir ── -->
+  <section class="panel-view" data-zone="reservoir">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Цифровой двойник пласта</div>
+    <!-- full: «…: планирование не от пробуренных скважин, а от ограничений пласта и геологии.» -->
+    <div class="panel-claim">Постоянно действующая гидродинамическая модель и приоритизация мероприятий по экономике</div>
+    <!-- no "Что закрывает" section: the steps are already listed on the left -->
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules">
+      <span class="module">ABAI Картопостроитель</span><span class="module">ABAI ЦРНС 2.0</span><span class="module">ABAI Управление заводнением 2.0</span><span class="module">ABAI ПиАГТМ</span><span class="module">ГГДМ (КМГИ)</span>
+    </div>
+    <!-- speaker's note: На первом активе: выделена перспективная область истощённого 5-го Юрского объекта, намечено бурение 1–2 горизонтальных скважин. -->
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−5%</div><div class="label">снижение CAPEX</div></div>
+    </div>
+  </section>
+
+  <section class="panel-view" data-zone="reservoir" data-step="0">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Построение и актуализация геолого-гидродинамической модели</div>
+    <div class="panel-claim"><span class="zone-name">Цифровой двойник пласта</span></div>
+    <div class="section-heading">Что это</div>
+    <!-- full: «…: структура, свойства коллектора, характеристики вытеснения и Кпрод по каждой скважине.» -->
+    <div class="panel-blocks"><div class="block"><div class="block-text">Постоянно действующая цифровая модель пласта</div></div></div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI Картопостроитель</span><span class="module">ГГДМ (КМГИ)</span></div>
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−5%</div><div class="label">снижение CAPEX</div></div>
+    </div>
+  </section>
+
+  <section class="panel-view" data-zone="reservoir" data-step="1">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Подготовка стратегии разработки месторождения</div>
+    <div class="panel-claim"><span class="zone-name">Цифровой двойник пласта</span></div>
+    <div class="section-heading">Что это</div>
+    <div class="panel-blocks"><div class="block"><div class="block-text">Выбор системы разработки, оптимизация заводнения и подбор мероприятий ГТМ на модели</div></div></div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI Управление заводнением 2.0</span><span class="module">ABAI ПиАГТМ</span><span class="module">ABAI ЦРНС 2.0</span></div>
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−5%</div><div class="label">снижение CAPEX</div></div>
+    </div>
+  </section>
+
+  <section class="panel-view" data-zone="reservoir" data-step="2">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Проведение технико-экономической оценки</div>
+    <div class="panel-claim"><span class="zone-name">Цифровой двойник пласта</span></div>
+    <div class="section-heading">Что это</div>
+    <!-- full: «…: CAPEX и OPEX мероприятий, ранжирование точек бурения по отдаче.» -->
+    <div class="panel-blocks"><div class="block"><div class="block-text">Расчёт экономики вариантов разработки</div></div></div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI ЦРНС 2.0</span></div>
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−5%</div><div class="label">снижение CAPEX</div></div>
+    </div>
+  </section>
+
+  <!-- ── well ── -->
+  <section class="panel-view" data-zone="well">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Цифровой двойник скважины</div>
+    <!-- full: «…: контроль параметров в реальном времени, предотвращение аварий, единая среда ТКРС.» -->
+    <div class="panel-claim">Сквозной двойник от начала бурения до вывода на режим и последующих ремонтов</div>
+    <div class="section-heading">Что закрывает</div>
+    <div class="panel-blocks">
+      <!-- Мониторинг строительства скважин · совместная работа подрядчика и заказчика -->
+      <div class="block"><div class="block-title">Онлайн-мониторинг бурения и сводки</div></div>
+      <!-- График ремонтов · выявление пересечений движения бригад · суточная отчётность · датчики СТПА -->
+      <div class="block"><div class="block-title">Планирование и контроль ТКРС</div></div>
+    </div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI Цифровое бурение</span><span class="module">ABAI Цифровой мониторинг ТКРС</span></div>
+    <!-- speaker's note: Появляются инструменты для оценки перехода от бурения «под ключ» к раздельному сервису — новая возможная бизнес-модель. -->
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−3%</div><div class="label">сроки вывода на режим</div></div>
+    </div>
+  </section>
+
+  <section class="panel-view" data-zone="well" data-step="0">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Мониторинг бурения и сводки</div>
+    <div class="panel-claim"><span class="zone-name">Цифровой двойник скважины</span></div>
+    <div class="section-heading">Что это</div>
+    <!-- full: «…: оперативная корректировка траектории, предотвращение аварий, полная цифровизация суточных сводок.» -->
+    <div class="panel-blocks"><div class="block"><div class="block-text">Контроль параметров, режимов и отклонений в реальном времени</div></div></div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI Цифровое бурение</span></div>
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−3%</div><div class="label">сроки вывода на режим</div></div>
+    </div>
+  </section>
+
+  <section class="panel-view" data-zone="well" data-step="1">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Планирование и контроль ремонтов скважин</div>
+    <div class="panel-claim"><span class="zone-name">Цифровой двойник скважины</span></div>
+    <div class="section-heading">Что это</div>
+    <!-- full: «…: выявление пересечений движения бригад, документооборот по ремонту, данные датчиков СТПА.» -->
+    <div class="panel-blocks"><div class="block"><div class="block-text">График ремонтов и его исполнение в единой среде</div></div></div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI Цифровой мониторинг ТКРС</span></div>
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−3%</div><div class="label">сроки вывода на режим</div></div>
+    </div>
+  </section>
+
+  <!-- ── surface ── -->
+  <section class="panel-view" data-zone="surface">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Цифровой двойник добычи и наземной инфраструктуры</div>
+    <!-- full: «…: модель работает с данными «с поля», реагирует на изменение дебита, обводнённости и давления, предупреждает об отклонениях.» -->
+    <div class="panel-claim">Контроль добычи в реальном времени по действующему фонду</div>
+    <div class="section-heading">Что закрывает</div>
+    <div class="panel-blocks">
+      <!-- Прогноз и контроль показателей добычи · выявление отклонений режима -->
+      <div class="block"><div class="block-title">Скважины и режимы фонда</div></div>
+      <!-- Оценка износа насосов · подбор низкорентабельных скважин под остановку -->
+      <div class="block"><div class="block-title">КНС и ППД · экономика</div></div>
+      <!-- Предиктивный анализ отказов напорного нефтепровода (машинное обучение) -->
+      <div class="block"><div class="block-title">Трубопроводы</div></div>
+      <!-- Загрузка системы сбора и ППД · расчёт электрических сетей · мнемосхема подготовки -->
+      <div class="block"><div class="block-title">Гидравлика · энергетика · подготовка</div></div>
+    </div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules">
+      <span class="module">ABAI ТР</span><span class="module">ABAI ПГНО</span><span class="module">ABAI Планирование добычи и мониторинг 2.0</span><span class="module">ABAI Наземная инфраструктура</span><span class="module">Интеллектуальное месторождение</span>
+    </div>
+    <!-- speaker's note: Любое изменение на одном шаге цепочки «пласт — скважина — труба» автоматически пересчитывает все остальные шаги. -->
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−5%</div><div class="label">управляемые потери добычи</div></div>
+      <div class="effect"><div class="value">−3%</div><div class="label">CAPEX/OPEX инфраструктуры</div></div>
+    </div>
+  </section>
+
+  <section class="panel-view" data-zone="surface" data-step="0">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Насосные станции и наземная инфраструктура</div>
+    <div class="panel-claim"><span class="zone-name">Цифровой двойник добычи и наземной инфраструктуры</span></div>
+    <div class="section-heading">Что это</div>
+    <div class="panel-blocks"><div class="block"><div class="block-text">Гидравлика системы сбора и ППД, загрузка сети, оценка износа насосов КНС и расчёт электрических сетей</div></div></div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI Наземная инфраструктура</span></div>
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−5%</div><div class="label">управляемые потери добычи</div></div>
+      <div class="effect"><div class="value">−3%</div><div class="label">CAPEX/OPEX инфраструктуры</div></div>
+    </div>
+  </section>
+
+  <section class="panel-view" data-zone="surface" data-step="1">
+    <div class="panel-kicker">Из чего строится ЦД Актива</div>
+    <div class="panel-name">Мониторинг добычи</div>
+    <div class="panel-claim"><span class="zone-name">Цифровой двойник добычи и наземной инфраструктуры</span></div>
+    <div class="section-heading">Что это</div>
+    <!-- full: «…: реакция на изменение дебита, обводнённости и давления, выявление отклонений режима и предиктивный анализ отказов трубопроводов.» -->
+    <div class="panel-blocks"><div class="block"><div class="block-text">Контроль добычи в реальном времени</div></div></div>
+    <div class="section-heading">Модули</div>
+    <div class="panel-modules"><span class="module">ABAI Планирование добычи и мониторинг 2.0</span><span class="module">ABAI ТР</span></div>
+    <div class="panel-note"></div>
+    <div class="section-heading">Ожидаемый эффект</div>
+    <div class="panel-effects">
+      <div class="effect"><div class="value">−5%</div><div class="label">управляемые потери добычи</div></div>
+      <div class="effect"><div class="value">−3%</div><div class="label">CAPEX/OPEX инфраструктуры</div></div>
+    </div>
+  </section>
+</aside>
+
+
+<!-- ═══ First-asset card (East Moldabek) ═════════════════════════════════
+     Opens from the button in the upper-right corner; folds while a layer is open.
+     Same data as the reference card in the lead-in finale (demo_with_map.html).
+     21.09 (Adil): "first asset", not "pilot" — the pilot is finished.
+     23.09 (Adil): "600 вариантов" — the number CRNS actually ran for this
+     asset; "Внедрение · октябрь 2026" moved to the lead-in roadmap.
+     25.09 (Adil): «Добыто» → «Извлечено» (the customer's term); КИН and МРП
+     rows back in the common register instead of a highlighted section. -->
+<button id="asset-toggle" type="button"><span>Первый актив</span><span class="arrow">→</span></button>
+<div id="asset-card">
+  <div class="kicker">Первый актив</div>
+  <div class="name">м/р «Восточный Молдабек»</div>
+  <div class="location">Атырауская область · АО «Эмбамунайгаз» · в разработке с 1999 года</div>
+  <div class="tier passport">
+    <div class="tier-heading">Справочная информация</div>
+    <div class="row accent"><div class="key">Остаточные извл. запасы</div><div class="value">14,8 млн тонн</div></div>
+    <div class="row accent"><div class="key">Извлечено</div><div class="value">36,7 %</div></div>
+    <div class="row"><div class="key">Обводнённость</div><div class="value">88,8 %</div></div>
+    <div class="row"><div class="key">Фонд добывающих</div><div class="value">360 скважин действующих</div></div>
+    <div class="row"><div class="key">Фонд нагнетательных</div><div class="value">61 скважина действующая</div></div>
+    <div class="row"><div class="key">Добыча с начала года</div><div class="value">310,3 тыс. тонн</div></div>
+    <div class="footnote">запасы и фонд — на 01.01.2026, НГДУ «Кайнармунайгаз»</div>
+  </div>
+  <div class="tier done">
+    <div class="tier-heading">Что уже сделано</div>
+    <div class="row"><div class="key">ЦИО</div><div class="value">ГГДМ переведена из статичной в постоянно действующую</div></div>
+    <div class="row"><div class="key">Расчёт сценариев</div><div class="value">600 вариантов</div></div>
+    <div class="row"><div class="key">Выявленный потенциал</div><div class="value">дополнительно 161 тыс. тонн добычи</div></div>
+    <div class="row"><div class="key">Оптимизация бурения</div><div class="value">6 наклонно-направленных → 2 горизонтальные</div></div>
+    <div class="row"><div class="key">КИН до 30 %</div><div class="value">рост коэффициента извлечения нефти</div></div>
+    <div class="row"><div class="key">550 → 700</div><div class="value">увеличение суток межремонтного периода</div></div>
+  </div>
+</div>
+
+<aside id="top12" aria-label="ТОП-12 месторождений КМГ">
+  <div class="kicker">2026–2028</div>
+  <h2>ТОП-12 месторождений КМГ</h2>
+  <div class="lead">обеспечивают <b>более 90 %</b> добычи</div>
+  <div class="region"><div class="region-name">Атырауская область</div>
+    <div class="companies">АО «Эмбамунайгаз»</div>
+    <div class="fields">м/р «Восточный Молдабек» · м/р «С. Нуржанова»</div></div>
+  <div class="region"><div class="region-name">Мангистауская область</div>
+    <div class="companies">АО «Озенмунайгаз» · АО «Мангистаумунайгаз» · АО «Каражанбасмунай»</div>
+    <div class="fields">м/р «Узень» · м/р «Карамандыбас» · м/р «Каламкас» · м/р «Жетыбай» · м/р «Каражанбас» · м/р «Асар»</div></div>
+  <div class="region"><div class="region-name">Актюбинская область</div>
+    <div class="companies">ТОО «Казахтуркмунай» · ТОО «Казахойл Актобе»</div>
+    <div class="fields">м/р «Каратобе Южное» · м/р «Алибекмола» · м/р «Кожасай»</div></div>
+  <div class="region"><div class="region-name">Кызылординская область</div>
+    <div class="companies">ТОО «СП Казгермунай»</div>
+    <div class="fields">м/р «Акшабулак Центральный»</div></div>
+</aside>
+
+<div id="cursor-chip"></div>
+
+
+<!-- ═══ Labels over the 3D scene ═════════════════════════════════════════
+     HTML so the numbers stay crisp. JS only sets their screen position.
+
+     TEO drill points: two of the eight wells are labelled — one per height
+     band. Chosen by closeness to the footprint centre, not by return: the
+     model rotates, and an edge column slides behind the stack for half a turn.
+     data-well links a tag to its column (v4/data/drill-points.js).
+     Figures are monthly = the annual estimate from drill-points.js ÷ 12
+     (VMB_2787: 4 700 т, 485 млн ₸; VMB_2768: 1 540 т, 126 млн ₸). The report
+     has "profit/loss", no NPV — hence "прибыль". The lower tag grows to the
+     left (to-left) so the two never overlap. -->
+<div id="teo-labels">
+  <div class="teo-tag horizontal" data-well="VMB_2787">
+    <div class="num">VMB_2787 · горизонтальная</div>
+    <div class="line">добыча ≈ <b>392</b> т/мес</div>
+    <div class="line">прибыль ≈ <b>40</b> млн ₸/мес</div>
+  </div>
+  <div class="teo-tag directional to-left" data-well="VMB_2768">
+    <div class="num">VMB_2768 · наклонно-направленная</div>
+    <div class="line">добыча ≈ <b>128</b> т/мес</div>
+    <div class="line">прибыль ≈ <b>11</b> млн ₸/мес</div>
+  </div>
+</div>
+<div id="drill-label"><span class="pulse"></span>идёт бурение<b class="depth">—</b></div>
+<div id="horizontal-label"><span class="pulse"></span>горизонтальное бурение</div>
+<!-- Surface accents: one label per step of the surface zone (data-step). -->
+<div id="surface-labels">
+  <div class="surface-label" data-step="0">Резервуарный парк и трубопровод</div>
+  <div class="surface-label" data-step="1">Фонд скважин под контролем</div>
+</div>
+
+
+<!-- ═══ Content of an open layer (right, 70 % of the screen) ═════════════
+     One view per layer; the reservoir has one per step (GGDM, step 0, has
+     no external tool and never opens). JS marks the current view and either
+     opens its configured default tab and embeds the local application on request.
+     The reservoir strategy uses NUMEX, the well layer uses DrillSpot.
+     24.09 (Adil): titles use the customer's words, not file names; the
+     "← к цифровому двойнику" button and the amber kicker were removed —
+     going back is the ↩ button next to the mini stack. Their markup stays,
+     hidden in styles/content.css. -->
+<aside id="content" inert>
+  <button id="content-back">← к цифровому двойнику</button>
+  <section class="content-view content-view-app" data-zone="reservoir" data-step="1">
+    <div class="content-kicker">ЦД пласта · проект 01</div>
+    <div class="content-heading">
+      <div class="content-name">Цифровой двойник пласта</div>
+      <div class="content-tabs" role="tablist" aria-label="Цифровой двойник пласта">
+        <button type="button" role="tab" data-view="video" aria-selected="true" aria-controls="content-optimize-video">Видео</button>
+        <button type="button" role="tab" data-view="live" aria-selected="false" aria-controls="content-numex-optimize">Живая система</button>
+      </div>
+    </div>
+    <video class="content-media" id="content-optimize-video" src="numex_opt.mp4" controls muted loop playsinline preload="auto" aria-label="Цифровой двойник пласта — видео"></video>
+    <iframe class="content-live" id="content-numex-optimize" data-src="numex_optimize/index.html?в_презентации=1&amp;v=fit-width-2" title="NUMEX Optimize — цифровой двойник пласта" allow="fullscreen"></iframe>
+  </section>
+  <section class="content-view content-view-app" data-zone="reservoir" data-step="2">
+    <div class="content-kicker">ЦД пласта · проект 01</div>
+    <div class="content-heading">
+      <div class="content-name">Технико-экономическая оценка</div>
+    </div>
+    <div class="content-carousel" id="content-teo-overview" role="region" aria-label="Экраны технико-экономической оценки">
+      <section class="teo-screen teo-map-slide is-active" aria-label="Карта первого расчёта">
+        <div class="teo-map-component" aria-label="Карта месторождения — первый расчёт">
+          <div class="teo-map-toolbar" role="toolbar" aria-label="Инструменты карты"></div>
+          <svg class="teo-map-chart" viewBox="100 0 1030 944" role="img" aria-label="Карта месторождения с контурами и скважинами" tabindex="0">
+            <defs>
+              <clipPath id="teo-plot-clip"><rect width="881" height="880"/></clipPath>
+              <linearGradient id="teo-map-scale" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0" stop-color="#f7fcf0"/><stop offset=".2" stop-color="#d5eecf"/><stop offset=".4" stop-color="#9ed8b7"/><stop offset=".6" stop-color="#56b8d0"/><stop offset=".8" stop-color="#1d7eb9"/><stop offset="1" stop-color="#084c88"/>
+              </linearGradient>
+            </defs>
+            <rect x="100" width="1030" height="944" fill="#fff"/>
+            <g transform="translate(212 21)">
+              <g clip-path="url(#teo-plot-clip)">
+                <g class="teo-map-view"><image href="NUMEX/map.svg" x="35" y="124" width="813" height="632"/></g>
+                <path class="teo-map-grid" fill="none" stroke="#9eacc2" stroke-width=".6" stroke-dasharray="3 4" hidden/>
+              </g>
+              <g class="teo-map-legend">
+                <text x="0" y="-5">1e6</text>
+                <rect x="14.5" y="14.5" width="26" height="230" fill="url(#teo-map-scale)" stroke="#111"/>
+                <text x="48" y="248">0</text><text x="48" y="202">2</text><text x="48" y="156">4</text><text x="48" y="110">6</text><text x="48" y="64">8</text>
+              </g>
+              <rect x=".5" y=".5" width="880" height="880" fill="none" stroke="#111" pointer-events="none"/>
+              <g class="teo-map-axes"></g>
+            </g>
+          </svg>
+        </div>
+      </section>
+      <section class="teo-screen teo-tables-slide" aria-label="Результаты двух расчётов">
+        <div class="teo-table-card">
+          <h3>6 вертикальных</h3>
+          <div class="teo-table-scroll" id="teo-table-vertical"></div>
+        </div>
+        <div class="teo-table-card">
+          <h3>2 горизонтальных</h3>
+          <div class="teo-table-scroll" id="teo-table-horizontal"></div>
+        </div>
+      </section>
+      <button id="teo-expand" type="button" aria-label="Развернуть слайд" title="Развернуть слайд">⛶</button>
+      <button id="teo-prev" type="button" aria-label="Предыдущий кадр">‹</button>
+      <button id="teo-next" type="button" aria-label="Следующий кадр">›</button>
+      <span id="teo-count" aria-live="polite">1 / 2</span>
+    </div>
+  </section>
+  <section class="content-view content-view-app" data-zone="well" data-default-view="live">
+    <div class="content-kicker">ЦД скважины · проект 02</div>
+    <div class="content-heading">
+      <div class="content-name">Цифровой двойник скважины</div>
+      <div class="content-tabs" role="tablist" aria-label="Цифровой двойник скважины">
+        <button type="button" role="tab" data-view="video" aria-selected="false" aria-controls="content-drillspot-video">Видео</button>
+        <button type="button" role="tab" data-view="live" aria-selected="true" aria-controls="content-drillspot">Живая система</button>
+      </div>
+    </div>
+    <video class="content-media" id="content-drillspot-video" src="drillspot_cut.mp4" controls muted loop playsinline preload="auto" aria-label="Цифровой двойник скважины — видео"></video>
+    <iframe class="content-live" id="content-drillspot" data-src="drillspot/?presentation=v6" title="DrillSpot — цифровой двойник скважины" allow="fullscreen"></iframe>
+    <video id="content-tumar" src="tumar_new.mp4?v=faststart-1" controls muted loop playsinline preload="auto"
+      aria-label="TUMAR"></video>
+  </section>
+  <section class="content-view content-view-app content-view-surface" data-zone="surface" data-default-view="live">
+    <div class="content-kicker">ЦД наземки · проект 03</div>
+    <div class="content-heading">
+      <div class="content-name">Интеллектуальное месторождение</div>
+      <div class="content-tabs" role="tablist" aria-label="Интеллектуальное месторождение">
+        <button type="button" role="tab" data-view="video" aria-selected="false" aria-controls="content-im-video">Видео</button>
+        <button type="button" role="tab" data-view="live" aria-selected="true" aria-controls="content-production-monitoring">Живая система</button>
+      </div>
+    </div>
+    <video class="content-media" id="content-im-video" src="im.mp4?v=faststart-1" controls muted loop playsinline preload="auto" aria-label="Интеллектуальное месторождение — видео"></video>
+    <iframe class="content-live" id="content-production-monitoring" data-src="production-monitoring/index.html?focus=wells&amp;v=20260930.2" title="Интеллектуальное месторождение — график добычи и фонд скважин" allow="fullscreen"></iframe>
+  </section>
+  <video id="content-video" controls autoplay muted loop playsinline preload="metadata"></video>
+  <div id="content-badge">заготовка · наполнение позже</div>
+</aside>
+
+<button id="mini-reset" type="button" aria-label="Вернуть исходный вид" title="Вернуть исходный вид">↩</button>
+
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+} }
+</script>
+<script type="module" src="v4/main.js?v=v6-back-1"></script>
+<script defer src="v6/teo-components.js?v=1"></script>
+<script defer src="v6/content-tabs.js?v=9"></script>
+<script type="module" src="v6/presentation-steps.js?v=6"></script>
+</body>
+</html>

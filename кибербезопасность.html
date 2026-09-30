@@ -151,6 +151,9 @@ h2.заголовок{font-size:39px;font-weight:700;line-height:1.15;margin-top
 .партнёр img{height:46px}
 .колонка_а.входит h3{color:var(--кмг)}
 .входит .пункты_а li::before{background:var(--кмг)}
+/* их слайд — целиком, с полями каркаса, скруглён как остальные полотна */
+.их_слайд{display:flex;align-items:center;justify-content:center}
+.их_слайд img{max-width:100%;max-height:100%;border-radius:16px;box-shadow:0 0 40px rgba(2,174,240,.18);border:1px solid var(--грань)}
 </style>
 </head>
 <body>
@@ -161,7 +164,14 @@ h2.заголовок{font-size:39px;font-weight:700;line-height:1.15;margin-top
 
 <div class="партнёр"><small>партнёр</small><img src="медиа/лого/kmg_automation_белый.png" alt="KMG Automation"></div>
 <!-- ================= 1. программа по этапам ================= -->
-<section class="слайд виден" id="с1" aria-label="Кибербезопасность АСУТП: программа по этапам">
+<!-- 28.09 (KMG Automation через Адиля): «второй слайд из нашей презы на экран с кибербезом» — их слайд
+     как есть, картинкой (экспорт из pptx через PowerPoint), первым; наш пересказ идёт следом -->
+<section class="слайд виден" id="с0" aria-label="Кибербезопасность АСУТП: слайд KMG Automation">
+  <div class="бровь">Кибербезопасность АСУТП · программа · слайд KMG Automation</div>
+  <div class="полотно их_слайд"><img src="медиа/кадры/кибербезопасность_слайд_kmga.jpg" alt="Программа кибербезопасности OT — слайд KMG Automation"></div>
+</section>
+
+<section class="слайд" id="с1" aria-label="Кибербезопасность АСУТП: программа по этапам">
   <div class="бровь">Кибербезопасность АСУТП · программа</div>
   <h2 class="заголовок дисплей">Программа кибербезопасности промышленных систем управления</h2>
   <p class="идея">От оценки и дорожной карты до проектирования, внедрения и сопровождения — единый воспроизводимый стандарт защиты для всех площадок.</p>
